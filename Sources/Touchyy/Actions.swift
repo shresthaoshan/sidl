@@ -1,8 +1,24 @@
 import AppKit
 
 enum Actions {
-    /// Placeholder until the settings UI (MVP step 5).
-    static let leftEdgeSwipeApp = "com.apple.Terminal"
+    static func perform(_ action: DiscreteAction) {
+        switch action {
+        case .disabled: break
+        case .openApp(let bundleID): openApp(bundleID: bundleID)
+        case .playPause: _ = sendMediaCommand?(2, nil)      // kMRTogglePlayPause
+        case .nextTrack: _ = sendMediaCommand?(4, nil)      // kMRNextTrack
+        case .previousTrack: _ = sendMediaCommand?(5, nil)  // kMRPreviousTrack
+        }
+    }
+
+    /// Applies a slide and returns the new level (0..1), or nil if nothing changed.
+    static func adjust(_ action: ContinuousAction, by delta: Float) -> Float? {
+        switch action {
+        case .disabled: nil
+        case .volume: Volume.change(by: delta)
+        case .brightness: Brightness.change(by: delta)
+        }
+    }
 
     static func openApp(bundleID: String) {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return }
@@ -15,9 +31,4 @@ enum Actions {
     static let sendMediaCommand = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_NOW)
         .flatMap { dlsym($0, "MRMediaRemoteSendCommand") }
         .map { unsafeBitCast($0, to: SendCommandFn.self) }
-
-    /// Toggles play/pause in the current Now Playing app (Music, Spotify, a browser).
-    static func playPause() {
-        _ = sendMediaCommand?(2, nil)  // kMRTogglePlayPause
-    }
 }

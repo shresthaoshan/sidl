@@ -35,7 +35,11 @@ struct DebugView: View {
             }
 
             Divider()
-            Button("Quit Touchyy") { NSApp.terminate(nil) }
+            HStack {
+                Button("Settings…") { SettingsWindow.show() }
+                Spacer()
+                Button("Quit Touchyy") { NSApp.terminate(nil) }
+            }
         }
         .padding()
         .frame(width: 360)
