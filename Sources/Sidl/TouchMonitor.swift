@@ -76,9 +76,15 @@ final class TouchMonitor: ObservableObject {
                 Actions.perform(action)
             }
             for (action, delta) in out.continuous {
-                if let level = Actions.adjust(action, by: delta) {
+                switch Actions.adjust(action, by: delta) {
+                case .level(let level):
                     self.lastGesture = "\(action.title) \(Int((level * 100).rounded()))%"
                     HUD.shared.show(action, level: level)
+                case .pending:
+                    break  // the HUD appears when the level is known
+                case .unsupported:
+                    self.lastGesture = "\(action.title) not supported"
+                    HUD.shared.show(action, level: nil)
                 }
             }
         }

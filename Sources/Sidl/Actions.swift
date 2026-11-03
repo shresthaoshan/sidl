@@ -24,11 +24,11 @@ enum Actions {
         }
     }
 
-    /// Applies a slide and returns the new level (0..1), or nil if nothing changed.
-    static func adjust(_ action: ContinuousAction, by delta: Float) -> Float? {
+    /// Applies one slide step. Main thread only.
+    static func adjust(_ action: ContinuousAction, by delta: Float) -> AdjustResult {
         switch action {
-        case .disabled: nil
-        case .volume: Volume.change(by: delta)
+        case .disabled: .unsupported
+        case .volume: Volume.change(by: delta).map(AdjustResult.level) ?? .unsupported
         case .brightness: Brightness.change(by: delta)
         }
     }

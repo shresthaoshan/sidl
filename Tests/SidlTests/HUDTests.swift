@@ -48,4 +48,16 @@ final class HUDTests: XCTestCase {
         XCTAssertTrue(hud.panel.isVisible)
         XCTAssertEqual(hud.panel.alphaValue, 1)
     }
+
+    func testUnsupportedHasWarningSymbolAndSameSize() {
+        XCTAssertEqual(HUD.symbol(for: .brightness, level: nil), "exclamationmark.triangle.fill")
+        let hud = HUD()
+        let width = hud.panel.frame.width
+        hud.show(.brightness, level: 0.5)
+        let withBar = hud.panel.contentView!.fittingSize.width
+        hud.show(.brightness, level: nil)
+        let withText = hud.panel.contentView!.fittingSize.width
+        XCTAssertEqual(withBar, withText, accuracy: 1, "the panel must not change width")
+        XCTAssertEqual(width, withBar, accuracy: 1)
+    }
 }
