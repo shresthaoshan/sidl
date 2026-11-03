@@ -48,6 +48,7 @@ final class TouchMonitor: ObservableObject {
             for (action, delta) in out.continuous {
                 if let level = Actions.adjust(action, by: delta) {
                     self.lastGesture = "\(action.title) \(Int((level * 100).rounded()))%"
+                    HUD.shared.show(action, level: level)
                 }
             }
         }
