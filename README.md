@@ -105,7 +105,7 @@ scripts/bundle.sh      Builds and signs Sidl.app
 
 ## Contributing
 
-See [CONTRIBUTIONS.md](CONTRIBUTIONS.md) for setup, architecture, tests, and how to send a change.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, architecture, tests, and how to send a change.
 
 ## License
 
