@@ -93,6 +93,15 @@ In the pull request, write which Mac, which trackpad, and which macOS version yo
 - Write comments that explain **why**, not what.
 - Swift 5 language mode, and no compiler warnings.
 
+## AI-assisted contributions
+
+You can use AI tools, such as coding assistants, to write code, tests, or documentation. Sidl itself was built with AI assistance.
+
+- **Disclose it.** In the pull request, say which parts an AI tool wrote or changed.
+- **You are responsible for the change.** Read, understand, and test every line before you send it. You must be able to explain the change in review.
+- **Test on real hardware.** An AI tool cannot feel a gesture. Gesture changes must be tested on a real trackpad, as described in [Test on a real trackpad](#test-on-a-real-trackpad).
+- **No unreviewed output.** Pull requests and bug reports that look like unreviewed AI output are closed without review.
+
 ## Commits and pull requests
 
 - One change for each pull request.
