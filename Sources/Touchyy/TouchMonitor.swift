@@ -9,7 +9,8 @@ struct Touch: Identifiable {
     let size: Float
 }
 
-/// Receives raw trackpad contacts from MultitouchSupport and handles them on the main thread.
+/// Receives raw trackpad contacts from MultitouchSupport.
+/// Gestures are recognized on the touch thread, so scroll blocking takes effect without a main-thread delay.
 final class TouchMonitor: ObservableObject {
     static let shared = TouchMonitor()
 
@@ -17,7 +18,9 @@ final class TouchMonitor: ObservableObject {
     @Published private(set) var deviceCount: Int32 = 0
     @Published private(set) var lastGesture = "none"
 
+    // Touch thread only.
     private var leftEdgeSwipe = EdgeSwipeRecognizer()
+    private var rightEdgeSlide = EdgeSlideRecognizer(zone: 0.9...1.0)
 
     private init() {}
 
@@ -28,17 +31,27 @@ final class TouchMonitor: ObservableObject {
                 return Touch(id: t.identifier, x: t.normalized.position.x, y: t.normalized.position.y,
                              state: t.state, size: t.size)
             }
-            DispatchQueue.main.async { TouchMonitor.shared.handle(frame) }
+            TouchMonitor.shared.handle(frame)
         }
     }
 
     func stop() { mt_stop() }
 
     private func handle(_ frame: [Touch]) {
-        touches = frame
-        if leftEdgeSwipe.process(frame) {
-            lastGesture = "Left-edge swipe"
-            Actions.openApp(bundleID: Actions.leftEdgeSwipeApp)
+        let swiped = leftEdgeSwipe.process(frame)
+        let slide = rightEdgeSlide.process(frame)
+        let claims = leftEdgeSwipe.claimsScroll || rightEdgeSlide.claimsScroll
+        ScrollBlocker.shared.blocking.withLock { $0 = claims }
+
+        DispatchQueue.main.async {
+            self.touches = frame
+            if swiped {
+                self.lastGesture = "Left-edge swipe"
+                Actions.openApp(bundleID: Actions.leftEdgeSwipeApp)
+            }
+            if slide != 0, let volume = Volume.change(by: slide) {
+                self.lastGesture = "Volume \(Int((volume * 100).rounded()))%"
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 /// Draws the trackpad surface and each finger as a dot.
 struct DebugView: View {
     @ObservedObject var monitor = TouchMonitor.shared
+    @ObservedObject var scrollBlocker = ScrollBlocker.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -10,6 +11,8 @@ struct DebugView: View {
                                          : "Devices: \(monitor.deviceCount)  Fingers: \(monitor.touches.count)")
                 .font(.caption.monospaced())
             Text("Last gesture: \(monitor.lastGesture)")
+                .font(.caption.monospaced())
+            Text(scrollBlocker.isActive ? "Scroll blocking: on" : "Scroll blocking: off (grant Accessibility)")
                 .font(.caption.monospaced())
 
             GeometryReader { geo in

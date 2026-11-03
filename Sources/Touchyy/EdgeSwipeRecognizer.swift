@@ -6,6 +6,9 @@ struct EdgeSwipeRecognizer {
     private var startX: [Int32: Float]?
     private var done = false    // gesture fired or was rejected; wait until all fingers lift
 
+    /// True from the moment both fingers land at the edge until they lift, unless the gesture is cancelled.
+    var claimsScroll: Bool { startX != nil }
+
     /// Feeds one frame of touches. Returns true once, on the frame that completes the swipe.
     mutating func process(_ touches: [Touch]) -> Bool {
         let active = touches.filter { $0.state == 4 }
@@ -23,7 +26,11 @@ struct EdgeSwipeRecognizer {
         }
 
         // Cancel if the finger set changes during the gesture.
-        guard active.count == 2, active.allSatisfy({ startX[$0.id] != nil }) else { done = true; return false }
+        guard active.count == 2, active.allSatisfy({ startX[$0.id] != nil }) else {
+            self.startX = nil
+            done = true
+            return false
+        }
 
         if active.allSatisfy({ $0.x - startX[$0.id]! >= minTravel }) {
             done = true

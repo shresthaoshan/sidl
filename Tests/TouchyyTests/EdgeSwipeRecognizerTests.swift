@@ -55,4 +55,24 @@ final class EdgeSwipeRecognizerTests: XCTestCase {
         // Lifting fingers (non-touching states) counts as empty too.
         XCTAssertEqual(fires([[finger(1, 0.3, state: 7), finger(2, 0.3, state: 7)]] + swipe, &r), 1)
     }
+
+    func testClaimsScrollUntilLiftEvenAfterFiring() {
+        var r = EdgeSwipeRecognizer()
+        _ = r.process([finger(1, 0.02), finger(2, 0.03)])
+        XCTAssertTrue(r.claimsScroll)
+        XCTAssertTrue(r.process([finger(1, 0.30), finger(2, 0.31)]))
+        XCTAssertTrue(r.claimsScroll)
+        _ = r.process([])
+        XCTAssertFalse(r.claimsScroll)
+    }
+
+    func testDoesNotClaimScrollAwayFromEdgeOrAfterCancel() {
+        var r = EdgeSwipeRecognizer()
+        _ = r.process([finger(1, 0.40), finger(2, 0.42)])
+        XCTAssertFalse(r.claimsScroll)
+        _ = r.process([])
+        _ = r.process([finger(1, 0.02), finger(2, 0.03)])
+        _ = r.process([finger(1, 0.05)])
+        XCTAssertFalse(r.claimsScroll)
+    }
 }
