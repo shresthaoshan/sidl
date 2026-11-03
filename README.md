@@ -3,6 +3,8 @@
 Sidl is a macOS menu bar app that adds gestures to the edges and corners of your trackpad.
 Slide along an edge to change the volume or the screen brightness. Swipe in from an edge, or click a top corner, to open an app, control music, or send a shortcut.
 
+**Website:** [shresthaoshan.github.io/sidl](https://shresthaoshan.github.io/sidl/)
+
 ## Gestures
 
 ### Edge gestures (two fingers)
