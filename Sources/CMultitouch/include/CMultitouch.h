@@ -23,9 +23,13 @@ typedef struct {
     float unk2;
 } MTTouch;
 
-typedef void (*MTFrameCallback)(const MTTouch *touches, int count, double timestamp);
+#include <stdint.h>
 
-// Starts all multitouch devices. Returns the number of devices started, or -1 on load failure.
+// `device` identifies the trackpad that sent the frame. It stays the same until the next mt_start.
+typedef void (*MTFrameCallback)(uintptr_t device, const MTTouch *touches, int count, double timestamp);
+
+// Starts all multitouch devices connected now. Stops devices from an earlier call first.
+// Returns the number of devices started, or -1 on load failure.
 int mt_start(MTFrameCallback callback);
 void mt_stop(void);
 

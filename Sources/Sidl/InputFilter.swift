@@ -1,16 +1,11 @@
 import ApplicationServices
 import Foundation
-import os
 
 /// One event tap for Sidl's input changes. Needs Accessibility permission.
 /// - Drops scroll events while a gesture owns the fingers.
 /// - Turns a click in a top corner into the corner's action, and drops the click.
 final class InputFilter: ObservableObject {
     static let shared = InputFilter()
-
-    /// Set from the touch thread, read from the event tap on the main thread.
-    let blocking = OSAllocatedUnfairLock(initialState: false)
-    let corners = OSAllocatedUnfairLock(initialState: CornerClickDetector())
 
     @Published private(set) var isActive = false
 
@@ -51,7 +46,7 @@ final class InputFilter: ObservableObject {
             return pass
         case .scrollWheel:
             let momentum = event.getIntegerValueField(.scrollWheelEventMomentumPhase) != 0
-            let drop = blocking.withLock { $0 } || (momentum && droppedLast)
+            let drop = TouchMonitor.shared.claimsScroll || (momentum && droppedLast)
             if !momentum { droppedLast = drop }
             return drop ? nil : pass
         case .leftMouseDown:
@@ -74,7 +69,7 @@ final class InputFilter: ObservableObject {
 
     /// The action for the corner under a single finger, if that corner has one.
     private func cornerAction() -> DiscreteAction? {
-        let corner = corners.withLock { $0 }.corner(at: ProcessInfo.processInfo.systemUptime)
+        let corner = TouchMonitor.shared.corner(at: ProcessInfo.processInfo.systemUptime)
         let m = SettingsStore.shared.mapping
         let action: DiscreteAction? = switch corner {
         case .topLeft: m.topLeftCorner
