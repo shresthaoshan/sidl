@@ -6,6 +6,7 @@ on:
     paths-ignore: ["**.md", "LICENSE"]
   pull_request:
     paths-ignore: ["**.md", "LICENSE"]
+  workflow_dispatch:  # run by hand from the Actions tab or with `gh workflow run`
 
 permissions:
   contents: read
