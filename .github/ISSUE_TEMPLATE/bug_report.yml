@@ -1,0 +1,88 @@
+name: Bug report
+description: A gesture or feature does not work as expected.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Please read the [known limitations](https://github.com/shresthaoshan/sidl#known-limitations) first.
+        Gesture bugs depend on the hardware, so the fields below are required.
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "15.6"
+    validations:
+      required: true
+
+  - type: input
+    id: mac
+    attributes:
+      label: Mac model
+      placeholder: "MacBook Air M2, 2022"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: trackpad
+    attributes:
+      label: Trackpad
+      options:
+        - Built-in only
+        - Magic Trackpad only
+        - Built-in and Magic Trackpad
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Sidl version or commit
+      placeholder: "0.1 or 742990f"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scroll-blocking
+    attributes:
+      label: What does the menu bar panel show for scroll blocking?
+      options:
+        - "Scroll blocking: on"
+        - "Scroll blocking: off"
+        - I do not know
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Which gesture, which edge, and how you moved your fingers.
+      placeholder: |
+        1. Put two fingers on the right edge.
+        2. Slide up slowly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Include the "Last gesture" line from the menu bar panel, if it helps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Other information
+      description: Screenshots, logs, or your gesture settings.

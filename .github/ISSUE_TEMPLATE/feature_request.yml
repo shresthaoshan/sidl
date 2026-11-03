@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest a new gesture, action, or setting.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What do you want?
+      description: The gesture, the action, or the setting.
+      placeholder: "A two-finger swipe up from the bottom edge that opens Mission Control."
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: The problem it solves, or how you would use it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways to get the same result, including existing macOS gestures.
