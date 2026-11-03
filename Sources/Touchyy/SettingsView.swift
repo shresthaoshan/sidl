@@ -1,12 +1,29 @@
 import AppKit
+import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject var store = SettingsStore.shared
+    @ObservedObject var launchAtLogin = LaunchAtLogin.shared
 
     var body: some View {
         Form {
+            Section("General") {
+                Toggle("Launch at login", isOn: Binding(get: { launchAtLogin.isEnabled },
+                                                        set: { launchAtLogin.setEnabled($0) }))
+                if launchAtLogin.status == .requiresApproval {
+                    HStack {
+                        Text("Approve Touchyy in Login Items.").foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Open Login Items") { SMAppService.openSystemSettingsLoginItems() }
+                    }
+                }
+                if let error = launchAtLogin.error {
+                    Text(error).foregroundStyle(.red)
+                }
+            }
+
             DiscreteActionRow(title: "Left-edge swipe right", action: $store.mapping.leftEdgeSwipe)
             DiscreteActionRow(title: "Top-edge swipe down", action: $store.mapping.topEdgeSwipe)
             ContinuousActionRow(title: "Left-edge slide", action: $store.mapping.leftEdgeSlide)
@@ -19,6 +36,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 420)
+        .onAppear { launchAtLogin.refresh() }
     }
 }
 
