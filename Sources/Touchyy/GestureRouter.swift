@@ -13,9 +13,12 @@ struct GestureRouter {
     private var rightEdgeSlide = EdgeSlideRecognizer(zone: 0.9...1.0)
 
     mutating func process(_ frame: [Touch], mapping m: Mapping) -> Output {
+        leftEdgeSwipe.minTravel = m.swipeTravel
+        topEdgeSwipe.minTravel = m.swipeTravel
+
         // Recognizers always run, so their state stays correct when the mapping changes mid-gesture.
-        let leftDelta = leftEdgeSlide.process(frame)
-        let rightDelta = rightEdgeSlide.process(frame)
+        let leftDelta = leftEdgeSlide.process(frame) * m.slideMultiplier
+        let rightDelta = rightEdgeSlide.process(frame) * m.slideMultiplier
         let swipedLeft = leftEdgeSwipe.process(frame)
         let swipedTop = topEdgeSwipe.process(frame)
 

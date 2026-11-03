@@ -67,4 +67,22 @@ final class GestureRouterTests: XCTestCase {
         let frames = [pair(x: 0.93, y: 0.97), pair(x: 0.93, y: 0.8), pair(x: 0.93, y: 0.6)]
         XCTAssertEqual(run(frames, m).flatMap(\.discrete), [.playPause])
     }
+
+    // MARK: Sensitivity
+
+    func testSlideSensitivityScalesDelta() {
+        var m = Mapping()
+        m.slideSensitivity = 5  // 2x
+        let total = run(slideUp(x: 0.93), m).flatMap(\.continuous).map(\.delta).reduce(0, +)
+        XCTAssertEqual(total, 0.4, accuracy: 0.001)
+    }
+
+    func testSwipeSensitivitySetsTravel() {
+        // Each finger moves 12%: enough at level 4 (11%), not at level 3 (14%).
+        let frames = [pair(x: 0.02, y: 0.5), pair(x: 0.08, y: 0.5), pair(x: 0.14, y: 0.5)]
+        var m = Mapping()
+        XCTAssertTrue(run(frames, m).flatMap(\.discrete).isEmpty)
+        m.swipeSensitivity = 4
+        XCTAssertEqual(run(frames, m).flatMap(\.discrete), [m.leftEdgeSwipe])
+    }
 }

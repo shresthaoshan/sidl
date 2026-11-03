@@ -40,10 +40,25 @@ enum ContinuousAction: String, Codable, CaseIterable, Identifiable {
 }
 
 struct Mapping: Equatable {
+    static let sensitivityLevels = 1...5
+    static let defaultSensitivity = 3
+
     var leftEdgeSwipe = DiscreteAction.openApp(bundleID: "com.apple.Terminal")
     var topEdgeSwipe = DiscreteAction.playPause
     var leftEdgeSlide = ContinuousAction.brightness
     var rightEdgeSlide = ContinuousAction.volume
+    var slideSensitivity = defaultSensitivity  // shared by both slides
+    var swipeSensitivity = defaultSensitivity  // shared by both swipes
+
+    /// Multiplier on slide travel. Level 3 changes the level 0% to 100% over one full trackpad height.
+    var slideMultiplier: Float { [0.5, 0.75, 1, 1.5, 2][Self.validLevel(slideSensitivity) - 1] }
+
+    /// Travel each finger needs for a swipe, as a fraction of the trackpad.
+    var swipeTravel: Float { [0.20, 0.17, 0.14, 0.11, 0.08][Self.validLevel(swipeSensitivity) - 1] }
+
+    static func validLevel(_ level: Int) -> Int {
+        sensitivityLevels.contains(level) ? level : defaultSensitivity
+    }
 }
 
 /// Saves the mapping in UserDefaults, one JSON value per gesture.
@@ -69,6 +84,10 @@ final class SettingsStore: ObservableObject {
         Self.load("topEdgeSwipe", into: &m.topEdgeSwipe, from: defaults)
         Self.load("leftEdgeSlide", into: &m.leftEdgeSlide, from: defaults)
         Self.load("rightEdgeSlide", into: &m.rightEdgeSlide, from: defaults)
+        Self.load("slideSensitivity", into: &m.slideSensitivity, from: defaults)
+        Self.load("swipeSensitivity", into: &m.swipeSensitivity, from: defaults)
+        m.slideSensitivity = Mapping.validLevel(m.slideSensitivity)
+        m.swipeSensitivity = Mapping.validLevel(m.swipeSensitivity)
         mapping = m
         snapshot = OSAllocatedUnfairLock(initialState: m)
     }
@@ -78,6 +97,8 @@ final class SettingsStore: ObservableObject {
         store("topEdgeSwipe", mapping.topEdgeSwipe)
         store("leftEdgeSlide", mapping.leftEdgeSlide)
         store("rightEdgeSlide", mapping.rightEdgeSlide)
+        store("slideSensitivity", mapping.slideSensitivity)
+        store("swipeSensitivity", mapping.swipeSensitivity)
     }
 
     private func store<T: Encodable>(_ key: String, _ value: T) {

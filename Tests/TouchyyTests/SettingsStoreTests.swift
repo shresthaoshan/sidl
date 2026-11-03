@@ -47,4 +47,33 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(mapping.topEdgeSwipe, .playPause)
         XCTAssertEqual(mapping.rightEdgeSlide, .disabled)
     }
+
+    // MARK: Sensitivity
+
+    func testSensitivityDefaultsToLevel3() {
+        let mapping = SettingsStore(defaults: defaults).mapping
+        XCTAssertEqual(mapping.slideSensitivity, 3)
+        XCTAssertEqual(mapping.swipeSensitivity, 3)
+        XCTAssertEqual(mapping.slideMultiplier, 1)
+        XCTAssertEqual(mapping.swipeTravel, 0.14)
+    }
+
+    func testSensitivityPersists() {
+        let store = SettingsStore(defaults: defaults)
+        store.mapping.slideSensitivity = 5
+        store.mapping.swipeSensitivity = 1
+        let reloaded = SettingsStore(defaults: defaults).mapping
+        XCTAssertEqual(reloaded.slideSensitivity, 5)
+        XCTAssertEqual(reloaded.swipeSensitivity, 1)
+        XCTAssertEqual(reloaded.slideMultiplier, 2)
+        XCTAssertEqual(reloaded.swipeTravel, 0.20)
+    }
+
+    func testInvalidSensitivityFallsBackToLevel3() {
+        defaults.set(try! JSONEncoder().encode(9), forKey: "gesture.slideSensitivity")
+        defaults.set(Data("garbage".utf8), forKey: "gesture.swipeSensitivity")
+        let mapping = SettingsStore(defaults: defaults).mapping
+        XCTAssertEqual(mapping.slideSensitivity, 3)
+        XCTAssertEqual(mapping.swipeSensitivity, 3)
+    }
 }

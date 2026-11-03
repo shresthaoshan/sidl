@@ -11,6 +11,11 @@ struct SettingsView: View {
             DiscreteActionRow(title: "Top-edge swipe down", action: $store.mapping.topEdgeSwipe)
             ContinuousActionRow(title: "Left-edge slide", action: $store.mapping.leftEdgeSlide)
             ContinuousActionRow(title: "Right-edge slide", action: $store.mapping.rightEdgeSlide)
+
+            Section("Sensitivity") {
+                SensitivityRow(title: "Slide sensitivity", level: $store.mapping.slideSensitivity)
+                SensitivityRow(title: "Swipe sensitivity", level: $store.mapping.swipeSensitivity)
+            }
         }
         .formStyle(.grouped)
         .frame(width: 420)
@@ -57,6 +62,19 @@ private struct ContinuousActionRow: View {
     var body: some View {
         Picker(title, selection: $action) {
             ForEach(ContinuousAction.allCases) { Text($0.title).tag($0) }
+        }
+    }
+}
+
+private struct SensitivityRow: View {
+    let title: String
+    @Binding var level: Int
+
+    var body: some View {
+        Picker(title, selection: $level) {
+            ForEach(Mapping.sensitivityLevels, id: \.self) {
+                Text($0 == Mapping.defaultSensitivity ? "\($0) (default)" : "\($0)").tag($0)
+            }
         }
     }
 }
