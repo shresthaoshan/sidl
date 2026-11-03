@@ -19,7 +19,9 @@ final class TouchMonitor: ObservableObject {
     @Published private(set) var lastGesture = "none"
 
     // Touch thread only.
-    private var leftEdgeSwipe = EdgeSwipeRecognizer()
+    private var leftEdgeSwipe = EdgeSwipeRecognizer(edge: .left)
+    private var topEdgeSwipe = EdgeSwipeRecognizer(edge: .top)
+    private var leftEdgeSlide = EdgeSlideRecognizer(zone: 0...0.1)
     private var rightEdgeSlide = EdgeSlideRecognizer(zone: 0.9...1.0)
 
     private init() {}
@@ -38,18 +40,31 @@ final class TouchMonitor: ObservableObject {
     func stop() { mt_stop() }
 
     private func handle(_ frame: [Touch]) {
-        let swiped = leftEdgeSwipe.process(frame)
-        let slide = rightEdgeSlide.process(frame)
-        let claims = leftEdgeSwipe.claimsScroll || rightEdgeSlide.claimsScroll
+        let brightnessDelta = leftEdgeSlide.process(frame)
+        let volumeDelta = rightEdgeSlide.process(frame)
+        // A slide owns the fingers once it starts, so a swipe on the same edge or corner does not also fire.
+        let sliding = leftEdgeSlide.phase == .sliding || rightEdgeSlide.phase == .sliding
+        let swipedLeft = leftEdgeSwipe.process(frame) && !sliding
+        let swipedTop = topEdgeSwipe.process(frame) && !sliding
+
+        let claims = leftEdgeSwipe.claimsScroll || topEdgeSwipe.claimsScroll
+            || leftEdgeSlide.claimsScroll || rightEdgeSlide.claimsScroll
         ScrollBlocker.shared.blocking.withLock { $0 = claims }
 
         DispatchQueue.main.async {
             self.touches = frame
-            if swiped {
+            if swipedLeft {
                 self.lastGesture = "Left-edge swipe"
                 Actions.openApp(bundleID: Actions.leftEdgeSwipeApp)
             }
-            if slide != 0, let volume = Volume.change(by: slide) {
+            if swipedTop {
+                self.lastGesture = "Play/Pause"
+                Actions.playPause()
+            }
+            if brightnessDelta != 0, let brightness = Brightness.change(by: brightnessDelta) {
+                self.lastGesture = "Brightness \(Int((brightness * 100).rounded()))%"
+            }
+            if volumeDelta != 0, let volume = Volume.change(by: volumeDelta) {
                 self.lastGesture = "Volume \(Int((volume * 100).rounded()))%"
             }
         }

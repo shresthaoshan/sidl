@@ -50,4 +50,11 @@ final class EdgeSlideRecognizerTests: XCTestCase {
         XCTAssertEqual(r.process([Touch(id: 1, x: 0.92, y: 0.7, state: 4, size: 1)]), 0)
         XCTAssertFalse(r.claimsScroll)
     }
+
+    func testLeftEdgeZoneSlides() {
+        var r = EdgeSlideRecognizer(zone: 0...0.1)
+        _ = r.process(pair(x: 0.03, y: 0.5))
+        XCTAssertEqual(r.process(pair(x: 0.03, y: 0.4)), -0.1, accuracy: 0.001)
+        XCTAssertEqual(r.phase, .sliding)
+    }
 }
