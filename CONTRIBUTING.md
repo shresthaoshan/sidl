@@ -29,27 +29,30 @@ To keep it across rebuilds, create a self-signed code signing certificate. The [
 ## How the code works
 
 ```
-MultitouchSupport ──frames──▶ TouchMonitor ──▶ GestureRouter ──▶ Output
-   (touch thread)                                   │              │
-                                       recognizers + Mapping       ▼
-                                                           main thread: Actions, HUD
+MultitouchSupport ──frames + device ID──▶ TouchMonitor ──▶ TouchHub ──▶ Output
+   (touch thread)                                          one GestureRouter     │
+                                                           + CornerClickDetector ▼
+                                                           for each trackpad   main thread: Actions, HUD
 ```
 
-1. `CMultitouch` (C) loads the private `MultitouchSupport` framework and sends each frame of finger positions to `TouchMonitor`.
-2. `TouchMonitor` runs `GestureRouter` **on the touch thread**. This sets the scroll block before the scroll events for the same movement arrive.
-3. `GestureRouter` runs every recognizer on each frame, and uses the current `Mapping` to decide which actions to send.
+1. `CMultitouch` (C) loads the private `MultitouchSupport` framework and sends each frame of finger positions, with the ID of the trackpad that sent it, to `TouchMonitor`.
+2. `TouchMonitor` passes the frame to `TouchHub` **on the touch thread**, under one lock. This sets the scroll block before the scroll events for the same movement arrive. The lock also makes sure that frames from two trackpads are never handled at the same time.
+3. `TouchHub` keeps a `GestureRouter` and a `CornerClickDetector` for each trackpad, so frames from two trackpads never mix.
+4. `GestureRouter` runs every recognizer on each frame, and uses the current `Mapping` to decide which actions to send.
    - `EdgeSwipeRecognizer`: a two-finger swipe in from the left or top edge. It fires once.
    - `EdgeSlideRecognizer`: a two-finger vertical slide on the left or right edge. It reports travel on each frame.
-4. `TouchMonitor` sends the actions to the main thread, where `Actions`, `Volume`, `Brightness`, and `HUD` do the work.
-5. `TouchMonitor` also feeds each frame to `CornerClickDetector`, which tracks a single finger in a top corner. It keeps the corner for 0.3 seconds after the finger lifts, because tap-to-click sends the click after the lift.
-6. `InputFilter` is one `CGEventTap` on the main thread:
-   - **Scroll events:** it drops them while a gesture owns the fingers.
-   - **Left clicks:** on a mouse-down, it asks `CornerClickDetector` for the corner. If the corner has an action, `ClickFilter` drops the mouse-down, the drags, and the mouse-up, and the action runs.
-7. `SettingsStore` saves the `Mapping` in `UserDefaults`. It also keeps a lock-protected copy for the touch thread.
+5. `CornerClickDetector` tracks a single finger in a top corner. It keeps the corner for 0.3 seconds after the finger lifts, because tap-to-click sends the click after the lift.
+6. `TouchMonitor` sends the actions to the main thread, where `Actions`, `Volume`, `Brightness`, and `HUD` do the work.
+7. `InputFilter` is one `CGEventTap` on the main thread. It reads its state from `TouchMonitor`:
+   - **Scroll events:** it drops them while a gesture on any trackpad owns the fingers.
+   - **Left clicks:** on a mouse-down, it asks for the corner of a single finger on any trackpad. If the corner has an action, `ClickFilter` drops the mouse-down, the drags, and the mouse-up, and the action runs.
+8. `DeviceWatcher` tells `TouchMonitor` when a trackpad connects or disconnects (an IOKit notification for `AppleMultitouchDevice`), and when the Mac wakes. `TouchMonitor` then reads the device list again, after 1 second, and clears `TouchHub`.
+9. `SettingsStore` saves the `Mapping` in `UserDefaults`. It also keeps a lock-protected copy for the touch thread.
 
 ### Rules
 
-- Recognizers, `GestureRouter`, `CornerClickDetector`, and `ClickFilter` are plain structs with no system calls. Keep them that way, so tests can check them with fake frames.
+- Recognizers, `GestureRouter`, `CornerClickDetector`, `ClickFilter`, and `TouchHub` are plain structs with no system calls. Keep them that way, so tests can check them with fake frames.
+- Gesture state belongs to one trackpad. Keep it in `TouchHub`, never in a single shared value.
 - The event tap callback must return fast, or macOS turns the tap off. Run actions with `DispatchQueue.main.async`, not inside the callback.
 - Code that runs on the touch thread must not touch UI or `@Published` values. Use `DispatchQueue.main.async` for that.
 - Private APIs are loaded with `dlopen` and `dlsym`, and the code must work when a symbol is missing. Never crash because a private API changed.

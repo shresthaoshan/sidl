@@ -111,9 +111,7 @@ Private APIs can change in any macOS update.
 
 ## Known limitations
 
-- Only one trackpad is supported at a time. A MacBook with a Magic Trackpad connected can confuse the gestures.
-- A trackpad that you connect after Sidl starts is not detected until you restart Sidl.
-- Gestures may stop after the Mac wakes from sleep. Restart Sidl if this happens.
+- Sidl supports two trackpads at the same time, and trackpads that connect after it starts. These are not yet tested with a real Magic Trackpad. Please report problems.
 - Brightness does not work on external displays.
 
 ## Project layout
