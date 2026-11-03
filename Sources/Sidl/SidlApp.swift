@@ -5,7 +5,7 @@ struct SidlApp: App {
     init() {
         NSApplication.shared.setActivationPolicy(.accessory)  // menu bar only, no Dock icon
         TouchMonitor.shared.start()
-        ScrollBlocker.shared.start()
+        InputFilter.shared.start()
     }
 
     var body: some Scene {

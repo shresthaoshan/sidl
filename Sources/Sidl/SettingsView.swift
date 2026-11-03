@@ -29,6 +29,11 @@ struct SettingsView: View {
             ContinuousActionRow(title: "Left-edge slide", action: $store.mapping.leftEdgeSlide)
             ContinuousActionRow(title: "Right-edge slide", action: $store.mapping.rightEdgeSlide)
 
+            Section("Corner clicks (one finger)") {
+                DiscreteActionRow(title: "Top-left corner", action: $store.mapping.topLeftCorner)
+                DiscreteActionRow(title: "Top-right corner", action: $store.mapping.topRightCorner)
+            }
+
             Section("Sensitivity") {
                 SensitivityRow(title: "Slide sensitivity", level: $store.mapping.slideSensitivity)
                 SensitivityRow(title: "Swipe sensitivity", level: $store.mapping.swipeSensitivity)
@@ -44,14 +49,34 @@ private struct DiscreteActionRow: View {
     let title: String
     @Binding var action: DiscreteAction
 
-    /// The Open app choice keeps the current app, or offers Finder until the user picks one.
+    /// Shown as "Open app…" until the user picks an app. Choosing it opens the file panel.
+    private static let unchosenApp = DiscreteAction.openApp(bundleID: "")
+
+    /// The Open app choice keeps the current app, or offers "Open app…".
     private var openAppChoice: DiscreteAction {
-        if case .openApp = action { action } else { .openApp(bundleID: "com.apple.finder") }
+        if case .openApp = action { action } else { Self.unchosenApp }
+    }
+
+    /// Choosing "Open app…" asks for the app first. If the user cancels, the previous action stays.
+    private var selection: Binding<DiscreteAction> {
+        Binding(get: { action }, set: { new in
+            if new == Self.unchosenApp {
+                DispatchQueue.main.async(execute: chooseApp)  // after the menu closes
+            } else {
+                action = new
+            }
+        })
+    }
+
+    /// The Keyboard shortcut choice keeps the recorded shortcut, or offers an empty one until the user records it.
+    private var shortcutChoice: DiscreteAction {
+        if case .keyboardShortcut = action { action } else { .keyboardShortcut(nil) }
     }
 
     var body: some View {
-        Picker(title, selection: $action) {
-            ForEach([.disabled, openAppChoice, .playPause, .nextTrack, .previousTrack], id: \.self) {
+        Picker(title, selection: selection) {
+            ForEach([.disabled, openAppChoice, .playPause, .nextTrack, .previousTrack, .screenshot, shortcutChoice],
+                    id: \.self) {
                 Text($0.title).tag($0)
             }
         }
@@ -60,6 +85,9 @@ private struct DiscreteActionRow: View {
                 Spacer()
                 Button("Choose App…", action: chooseApp)
             }
+        }
+        if case .keyboardShortcut = action {
+            ShortcutRecorder(action: $action)
         }
     }
 
@@ -70,6 +98,40 @@ private struct DiscreteActionRow: View {
         guard panel.runModal() == .OK, let url = panel.url,
               let bundleID = Bundle(url: url)?.bundleIdentifier else { return }
         action = .openApp(bundleID: bundleID)
+    }
+}
+
+/// Records the next key combination pressed while the Settings window is active.
+private struct ShortcutRecorder: View {
+    @Binding var action: DiscreteAction
+    @State private var monitor: Any?
+
+    var body: some View {
+        HStack {
+            Spacer()
+            Button(monitor == nil ? "Record Shortcut…" : "Press a shortcut (⎋ to cancel)") {
+                monitor == nil ? start() : stop()
+            }
+        }
+        .onDisappear(perform: stop)
+    }
+
+    private func start() {
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 53 && event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty {
+                stop()  // plain Escape cancels
+            } else if let combo = KeyCombo(keyCode: event.keyCode, flags: event.modifierFlags,
+                                           characters: event.charactersIgnoringModifiers) {
+                action = .keyboardShortcut(combo)
+                stop()
+            }
+            return nil  // the keys are for the recorder, not for the window
+        }
+    }
+
+    private func stop() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
     }
 }
 

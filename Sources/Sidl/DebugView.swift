@@ -3,7 +3,7 @@ import SwiftUI
 /// Draws the trackpad surface and each finger as a dot.
 struct DebugView: View {
     @ObservedObject var monitor = TouchMonitor.shared
-    @ObservedObject var scrollBlocker = ScrollBlocker.shared
+    @ObservedObject var scrollBlocker = InputFilter.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {

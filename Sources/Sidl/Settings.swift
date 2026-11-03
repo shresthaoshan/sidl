@@ -1,21 +1,25 @@
 import AppKit
 import os
 
-/// Action for a gesture that fires once (a swipe).
+/// Action for a gesture that fires once (a swipe or a corner click).
 enum DiscreteAction: Codable, Hashable {
     case disabled
     case openApp(bundleID: String)
     case playPause
     case nextTrack
     case previousTrack
+    case screenshot
+    case keyboardShortcut(KeyCombo?)  // nil until the user records one
 
     var title: String {
         switch self {
         case .disabled: "None"
-        case .openApp(let bundleID): "Open \(Self.appName(bundleID))"
+        case .openApp(let bundleID): bundleID.isEmpty ? "Open app…" : "Open \(Self.appName(bundleID))"
         case .playPause: "Play/Pause"
         case .nextTrack: "Next track"
         case .previousTrack: "Previous track"
+        case .screenshot: "Screenshot"
+        case .keyboardShortcut(let combo): "Shortcut \(combo?.display ?? "(not set)")"
         }
     }
 
@@ -47,6 +51,8 @@ struct Mapping: Equatable {
     var topEdgeSwipe = DiscreteAction.playPause
     var leftEdgeSlide = ContinuousAction.brightness
     var rightEdgeSlide = ContinuousAction.volume
+    var topLeftCorner = DiscreteAction.previousTrack
+    var topRightCorner = DiscreteAction.nextTrack
     var slideSensitivity = defaultSensitivity  // shared by both slides
     var swipeSensitivity = defaultSensitivity  // shared by both swipes
 
@@ -84,6 +90,8 @@ final class SettingsStore: ObservableObject {
         Self.load("topEdgeSwipe", into: &m.topEdgeSwipe, from: defaults)
         Self.load("leftEdgeSlide", into: &m.leftEdgeSlide, from: defaults)
         Self.load("rightEdgeSlide", into: &m.rightEdgeSlide, from: defaults)
+        Self.load("topLeftCorner", into: &m.topLeftCorner, from: defaults)
+        Self.load("topRightCorner", into: &m.topRightCorner, from: defaults)
         Self.load("slideSensitivity", into: &m.slideSensitivity, from: defaults)
         Self.load("swipeSensitivity", into: &m.swipeSensitivity, from: defaults)
         m.slideSensitivity = Mapping.validLevel(m.slideSensitivity)
@@ -97,6 +105,8 @@ final class SettingsStore: ObservableObject {
         store("topEdgeSwipe", mapping.topEdgeSwipe)
         store("leftEdgeSlide", mapping.leftEdgeSlide)
         store("rightEdgeSlide", mapping.rightEdgeSlide)
+        store("topLeftCorner", mapping.topLeftCorner)
+        store("topRightCorner", mapping.topRightCorner)
         store("slideSensitivity", mapping.slideSensitivity)
         store("swipeSensitivity", mapping.swipeSensitivity)
     }

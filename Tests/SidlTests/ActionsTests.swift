@@ -6,4 +6,9 @@ final class ActionsTests: XCTestCase {
     func testMediaRemoteCommandSenderLoads() {
         XCTAssertNotNil(Actions.sendMediaCommand)
     }
+
+    func testOpenAppTitleBeforeAndAfterAnAppIsChosen() {
+        XCTAssertEqual(DiscreteAction.openApp(bundleID: "").title, "Open app…")
+        XCTAssertEqual(DiscreteAction.openApp(bundleID: "com.apple.finder").title, "Open Finder")
+    }
 }

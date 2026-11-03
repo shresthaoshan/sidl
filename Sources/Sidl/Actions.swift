@@ -8,6 +8,19 @@ enum Actions {
         case .playPause: _ = sendMediaCommand?(2, nil)      // kMRTogglePlayPause
         case .nextTrack: _ = sendMediaCommand?(4, nil)      // kMRNextTrack
         case .previousTrack: _ = sendMediaCommand?(5, nil)  // kMRPreviousTrack
+        // The system shortcut runs the macOS screenshot tool, so Sidl needs no Screen Recording permission.
+        case .screenshot: post(.screenshotToolbar)
+        case .keyboardShortcut(let combo): if let combo { post(combo) }
+        }
+    }
+
+    /// Sends a key combination as if typed. Needs Accessibility permission.
+    static func post(_ combo: KeyCombo) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        for keyDown in [true, false] {
+            let event = CGEvent(keyboardEventSource: source, virtualKey: combo.keyCode, keyDown: keyDown)
+            event?.flags = CGEventFlags(rawValue: combo.modifiers)
+            event?.post(tap: .cghidEventTap)
         }
     }
 

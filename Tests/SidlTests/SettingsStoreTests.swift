@@ -76,4 +76,29 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(mapping.slideSensitivity, 3)
         XCTAssertEqual(mapping.swipeSensitivity, 3)
     }
+
+    // MARK: Corner clicks
+
+    func testCornersDefaultToPreviousAndNextTrack() {
+        let mapping = SettingsStore(defaults: defaults).mapping
+        XCTAssertEqual(mapping.topLeftCorner, .previousTrack)
+        XCTAssertEqual(mapping.topRightCorner, .nextTrack)
+    }
+
+    func testCornerActionsAndShortcutPersist() {
+        let combo = KeyCombo(keyCode: 17, flags: [.command, .option], characters: "t")!
+        let store = SettingsStore(defaults: defaults)
+        store.mapping.topLeftCorner = .screenshot
+        store.mapping.topRightCorner = .keyboardShortcut(combo)
+
+        let reloaded = SettingsStore(defaults: defaults).mapping
+        XCTAssertEqual(reloaded.topLeftCorner, .screenshot)
+        XCTAssertEqual(reloaded.topRightCorner, .keyboardShortcut(combo))
+    }
+
+    func testValuesSavedBeforeCornerClicksStillLoad() {
+        // A swipe action saved by an older version must still decode after the new cases were added.
+        defaults.set(Data(#"{"nextTrack":{}}"#.utf8), forKey: "gesture.topEdgeSwipe")
+        XCTAssertEqual(SettingsStore(defaults: defaults).mapping.topEdgeSwipe, .nextTrack)
+    }
 }
