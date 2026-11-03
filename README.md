@@ -1,25 +1,46 @@
 # Sidl
 
-Sidl is a macOS menu bar app that adds gestures to the edges of your trackpad.
-Slide along an edge to change the volume or the screen brightness. Swipe in from an edge to open an app or control music.
+Sidl is a macOS menu bar app that adds gestures to the edges and corners of your trackpad.
+Slide along an edge to change the volume or the screen brightness. Swipe in from an edge, or click a top corner, to open an app, control music, or send a shortcut.
 
 ## Gestures
 
-All gestures use two fingers. Each edge zone is the outer 10% of the trackpad.
+### Edge gestures (two fingers)
 
-| Gesture | Default action | Other actions |
-|---|---|---|
-| Swipe right from the left edge | Open Terminal | Open any app, Play/Pause, Next track, Previous track, None |
-| Swipe down from the top edge | Play/Pause | Open any app, Next track, Previous track, None |
-| Slide up or down on the left edge | Brightness | Volume, None |
-| Slide up or down on the right edge | Volume | Brightness, None |
+Each edge zone is the outer 10% of the trackpad.
+
+| Gesture | Default action |
+|---|---|
+| Swipe right from the left edge | Open Terminal |
+| Swipe down from the top edge | Play/Pause |
+| Slide up or down on the left edge | Brightness |
+| Slide up or down on the right edge | Volume |
 
 The macOS gesture for Notification Center (two-finger swipe left from the right edge) still works.
 A horizontal move on the right edge cancels the volume slide.
 
+### Corner clicks (one finger)
+
+Click, or tap if tap-to-click is on, in a top corner of the trackpad. Each corner zone is 12% × 12% of the trackpad.
+Sidl runs the corner's action, and the app under the pointer gets no click.
+
+| Corner | Default action |
+|---|---|
+| Top-left | Previous track |
+| Top-right | Next track |
+
+Clicks with two fingers, and clicks outside the top corners, work as normal.
+
+### Actions
+
+- **Swipes and corner clicks:** Open any app, Play/Pause, Next track, Previous track, Screenshot, Keyboard shortcut, or None.
+  - **Screenshot** opens the macOS screenshot toolbar (the same as ⇧⌘5).
+  - **Keyboard shortcut** sends a key combination that you record in Settings, for example ⌥⌘T.
+- **Slides:** Volume, Brightness, or None.
+
 ## Features
 
-- **Settings window:** choose the action for each gesture, or turn a gesture off.
+- **Settings window:** choose the action for each gesture and corner, or turn it off.
 - **Sensitivity:** one setting for slides (how far you slide for a full change) and one for swipes (how far you swipe before it triggers). Each has levels 1 to 5.
 - **On-screen display:** shows the volume or brightness level while you slide.
 - **Scroll blocking:** while an edge gesture is active, the window under the pointer does not scroll.
@@ -29,7 +50,7 @@ A horizontal move on the right edge cancels the volume slide.
 
 - macOS 13 Ventura or later.
 - A Mac trackpad: built-in, or a Magic Trackpad.
-- **Accessibility permission**, for scroll blocking. The other gestures work without it.
+- **Accessibility permission**, for scroll blocking, corner clicks, and the Screenshot and Keyboard shortcut actions. The other gestures and actions work without it.
 
 Brightness control works only on the built-in display.
 
@@ -82,7 +103,8 @@ Sidl uses private macOS frameworks. That is why it is not on the Mac App Store.
 | Volume | CoreAudio |
 | Brightness | `DisplayServices.framework` (private) |
 | Play/Pause, next, previous | `MediaRemote.framework` (private) |
-| Scroll blocking | A `CGEventTap` on scroll events |
+| Scroll blocking, corner clicks | One `CGEventTap` on scroll events and left clicks |
+| Screenshot, keyboard shortcuts | Key events posted with `CGEvent` |
 | Open app, launch at login | `NSWorkspace`, `SMAppService` |
 
 Private APIs can change in any macOS update.

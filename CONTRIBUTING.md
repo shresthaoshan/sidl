@@ -41,12 +41,16 @@ MultitouchSupport ──frames──▶ TouchMonitor ──▶ GestureRouter ─
    - `EdgeSwipeRecognizer`: a two-finger swipe in from the left or top edge. It fires once.
    - `EdgeSlideRecognizer`: a two-finger vertical slide on the left or right edge. It reports travel on each frame.
 4. `TouchMonitor` sends the actions to the main thread, where `Actions`, `Volume`, `Brightness`, and `HUD` do the work.
-5. `ScrollBlocker` is a `CGEventTap`. It drops scroll events while a gesture owns the fingers.
-6. `SettingsStore` saves the `Mapping` in `UserDefaults`. It also keeps a lock-protected copy for the touch thread.
+5. `TouchMonitor` also feeds each frame to `CornerClickDetector`, which tracks a single finger in a top corner. It keeps the corner for 0.3 seconds after the finger lifts, because tap-to-click sends the click after the lift.
+6. `InputFilter` is one `CGEventTap` on the main thread:
+   - **Scroll events:** it drops them while a gesture owns the fingers.
+   - **Left clicks:** on a mouse-down, it asks `CornerClickDetector` for the corner. If the corner has an action, `ClickFilter` drops the mouse-down, the drags, and the mouse-up, and the action runs.
+7. `SettingsStore` saves the `Mapping` in `UserDefaults`. It also keeps a lock-protected copy for the touch thread.
 
 ### Rules
 
-- Recognizers and `GestureRouter` are plain structs with no system calls. Keep them that way, so tests can check them with fake frames.
+- Recognizers, `GestureRouter`, `CornerClickDetector`, and `ClickFilter` are plain structs with no system calls. Keep them that way, so tests can check them with fake frames.
+- The event tap callback must return fast, or macOS turns the tap off. Run actions with `DispatchQueue.main.async`, not inside the callback.
 - Code that runs on the touch thread must not touch UI or `@Published` values. Use `DispatchQueue.main.async` for that.
 - Private APIs are loaded with `dlopen` and `dlsym`, and the code must work when a symbol is missing. Never crash because a private API changed.
 
@@ -56,8 +60,8 @@ For a new **action** (for example, Mute):
 
 1. Add a case to `DiscreteAction` or `ContinuousAction` in `Sources/Sidl/Settings.swift`, with a `title`.
 2. Handle the case in `Actions.perform` or `Actions.adjust`.
-3. Add the case to the picker in `SettingsView.swift`.
-4. Add tests.
+3. Add the case to the picker in `SettingsView.swift`. A discrete action is then available for swipes and corner clicks.
+4. Add tests, including a test that values saved by older versions still decode.
 
 For a new **gesture**:
 
