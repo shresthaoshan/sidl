@@ -52,7 +52,12 @@ Clicks with two fingers, and clicks outside the top corners, work as normal.
 - A Mac trackpad: built-in, or a Magic Trackpad.
 - **Accessibility permission**, for scroll blocking, corner clicks, and the Screenshot and Keyboard shortcut actions. The other gestures and actions work without it.
 
-Brightness control works only on the built-in display.
+Brightness changes the display that has the pointer:
+
+- **Built-in display:** always works.
+- **Apple displays** (Studio Display, Pro Display XDR, LG UltraFine): should work, but this is not tested yet.
+- **Other external monitors:** work over **DDC/CI** on Apple silicon Macs, when only one external monitor is connected and DDC/CI is on in the monitor's own menu. Some HDMI ports, docks, and adapters do not pass DDC/CI through.
+- If brightness cannot be changed, the on-screen display shows "Not supported on this display".
 
 ## Install
 
@@ -101,7 +106,7 @@ Sidl uses private macOS frameworks. That is why it is not on the Mac App Store.
 |---|---|
 | Raw finger positions | `MultitouchSupport.framework` (private), loaded at runtime with `dlopen` |
 | Volume | CoreAudio |
-| Brightness | `DisplayServices.framework` (private) |
+| Brightness | `DisplayServices.framework` (private); DDC/CI with `IOAVService` I2C functions (private) for external monitors |
 | Play/Pause, next, previous | `MediaRemote.framework` (private) |
 | Scroll blocking, corner clicks | One `CGEventTap` on scroll events and left clicks |
 | Screenshot, keyboard shortcuts | Key events posted with `CGEvent` |
@@ -112,7 +117,7 @@ Private APIs can change in any macOS update.
 ## Known limitations
 
 - Sidl supports two trackpads at the same time, and trackpads that connect after it starts. These are not yet tested with a real Magic Trackpad. Please report problems.
-- Brightness does not work on external displays.
+- External monitor brightness (DDC/CI) is not yet tested with a real monitor. It works with one external monitor at a time, only on Apple silicon. Please report problems with your monitor model and how it connects.
 
 ## Project layout
 
