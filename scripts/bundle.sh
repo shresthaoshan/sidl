@@ -1,6 +1,12 @@
 #!/bin/sh
 # Builds Touchyy.app so macOS can grant it Accessibility permission.
-# Usage: scripts/bundle.sh [debug|release]   (SIGN_IDENTITY overrides ad-hoc signing)
+# Usage: scripts/bundle.sh [debug|release]
+#
+# Signs with the "Touchyy Dev" certificate (or $SIGN_IDENTITY), so Accessibility permission
+# survives rebuilds. Without it, the app is ad-hoc signed and loses the permission on every build.
+# To create the certificate: Keychain Access > Certificate Assistant > Create a Certificate,
+# name "Touchyy Dev", Identity Type "Self Signed Root", Certificate Type "Code Signing".
+# Then open the certificate and set Trust > Code Signing to "Always Trust".
 set -eu
 cd "$(dirname "$0")/.."
 config="${1:-debug}"
@@ -25,5 +31,10 @@ cat > "$app/Contents/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
-codesign --force --sign "${SIGN_IDENTITY:--}" "$app"
+identity="${SIGN_IDENTITY:-Touchyy Dev}"
+if ! security find-identity -v -p codesigning | grep -qF "\"$identity\""; then
+    echo "warning: no valid signing identity \"$identity\"; using ad-hoc signing (Accessibility resets on every build)" >&2
+    identity=-
+fi
+codesign --force --sign "$identity" "$app"
 echo "Built $app"
