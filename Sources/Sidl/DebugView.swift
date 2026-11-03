@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Draws the trackpad surface and each finger as a dot.
+/// The menu bar panel: status lines, the live trackpad drawing, and the app buttons.
 struct DebugView: View {
     @ObservedObject var monitor = TouchMonitor.shared
     @ObservedObject var scrollBlocker = InputFilter.shared
@@ -15,24 +15,7 @@ struct DebugView: View {
             Text(scrollBlocker.isActive ? "Scroll blocking: on" : "Scroll blocking: off (grant Accessibility)")
                 .font(.caption.monospaced())
 
-            GeometryReader { geo in
-                ZStack(alignment: .topLeading) {
-                    RoundedRectangle(cornerRadius: 10).stroke(.secondary)
-                    ForEach(monitor.touches) { t in
-                        Circle()
-                            .fill(t.state == 4 ? Color.accentColor : .gray)
-                            .frame(width: 24, height: 24)
-                            .position(x: CGFloat(t.x) * geo.size.width,
-                                      y: CGFloat(1 - t.y) * geo.size.height)
-                    }
-                }
-            }
-            .aspectRatio(1.6, contentMode: .fit)
-
-            ForEach(monitor.touches) { t in
-                Text(String(format: "#%d  x=%.2f  y=%.2f  state=%d  size=%.2f", t.id, t.x, t.y, t.state, t.size))
-                    .font(.caption2.monospaced())
-            }
+            TrackpadView(touches: monitor.touches)
 
             Divider()
             HStack {
