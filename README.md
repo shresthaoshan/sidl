@@ -132,8 +132,8 @@ scripts/bundle.sh      Builds and signs Sidl.app
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, architecture, tests, and how to send a change.
+See [CONTRIBUTING.md](https://github.com/shresthaoshan/sidl/blob/main/CONTRIBUTING.md) for setup, architecture, tests, and how to send a change.
 
 ## License
 
-Sidl is released under the [MIT License](LICENSE).
+Sidl is released under the [MIT License](https://github.com/shresthaoshan/sidl/blob/main/LICENSE).

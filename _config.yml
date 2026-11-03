@@ -12,8 +12,11 @@ plugins:
   - jekyll-remote-theme
   - jekyll-include-cache
 
-# README.md is the home page. CONTRIBUTING.md and LICENSE are published too, so the README's links work.
+# README.md is the home page. The README links to CONTRIBUTING.md and LICENSE on GitHub,
+# because GitHub Pages does not render files with those names without front matter.
 exclude:
+  - CONTRIBUTING.md
+  - LICENSE
   - Package.swift
   - Sources
   - Tests
