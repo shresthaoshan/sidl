@@ -1,5 +1,5 @@
 import XCTest
-@testable import Touchyy
+@testable import Sidl
 
 final class HUDTests: XCTestCase {
     func testPanelHasSizeAndIgnoresMouse() {

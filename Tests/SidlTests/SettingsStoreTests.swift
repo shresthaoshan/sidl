@@ -1,12 +1,12 @@
 import XCTest
-@testable import Touchyy
+@testable import Sidl
 
 final class SettingsStoreTests: XCTestCase {
     private var suiteName = ""
     private var defaults: UserDefaults!
 
     override func setUp() {
-        suiteName = "TouchyyTests-\(UUID().uuidString)"
+        suiteName = "SidlTests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
     }
 

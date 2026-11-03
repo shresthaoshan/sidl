@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct TouchyyApp: App {
+struct SidlApp: App {
     init() {
         NSApplication.shared.setActivationPolicy(.accessory)  // menu bar only, no Dock icon
         TouchMonitor.shared.start()
@@ -9,7 +9,7 @@ struct TouchyyApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("Touchyy", systemImage: "hand.draw") {
+        MenuBarExtra("Sidl", systemImage: "hand.draw") {
             DebugView()
         }
         .menuBarExtraStyle(.window)

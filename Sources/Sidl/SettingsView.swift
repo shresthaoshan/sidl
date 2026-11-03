@@ -14,7 +14,7 @@ struct SettingsView: View {
                                                         set: { launchAtLogin.setEnabled($0) }))
                 if launchAtLogin.status == .requiresApproval {
                     HStack {
-                        Text("Approve Touchyy in Login Items.").foregroundStyle(.secondary)
+                        Text("Approve Sidl in Login Items.").foregroundStyle(.secondary)
                         Spacer()
                         Button("Open Login Items") { SMAppService.openSystemSettingsLoginItems() }
                     }
@@ -114,7 +114,7 @@ enum SettingsWindow {
         let hosting = NSHostingController(rootView: SettingsView())
         hosting.sizingOptions = .preferredContentSize  // window follows the view, also when the Choose App row appears
         let w = NSWindow(contentViewController: hosting)
-        w.title = "Touchyy Settings"
+        w.title = "Sidl Settings"
         w.styleMask = [.titled, .closable]
         w.isReleasedWhenClosed = false
         w.setContentSize(hosting.view.fittingSize)  // size now, so center() places the full window

@@ -1,6 +1,6 @@
 import SwiftUI
 import XCTest
-@testable import Touchyy
+@testable import Sidl
 
 final class SettingsViewTests: XCTestCase {
     /// Regression: the window opened with only a title bar because its content had no height.

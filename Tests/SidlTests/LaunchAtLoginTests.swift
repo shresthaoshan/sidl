@@ -1,6 +1,6 @@
 import ServiceManagement
 import XCTest
-@testable import Touchyy
+@testable import Sidl
 
 /// Stands in for SMAppService, so tests never add a real login item.
 private final class FakeLoginItem: LoginItemService {

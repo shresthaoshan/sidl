@@ -1,5 +1,5 @@
 import XCTest
-@testable import Touchyy
+@testable import Sidl
 
 final class EdgeSlideRecognizerTests: XCTestCase {
     private func pair(x: Float = 0.95, y: Float) -> [Touch] {

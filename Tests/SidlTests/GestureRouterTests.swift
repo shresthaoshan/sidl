@@ -1,5 +1,5 @@
 import XCTest
-@testable import Touchyy
+@testable import Sidl
 
 final class GestureRouterTests: XCTestCase {
     private func pair(x: Float, y: Float) -> [Touch] {

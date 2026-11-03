@@ -1,5 +1,5 @@
 import XCTest
-@testable import Touchyy
+@testable import Sidl
 
 final class EdgeSwipeRecognizerTests: XCTestCase {
     private func finger(_ id: Int32, _ x: Float, state: Int32 = 4) -> Touch {

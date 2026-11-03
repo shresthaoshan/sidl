@@ -38,7 +38,7 @@ struct DebugView: View {
             HStack {
                 Button("Settings…") { SettingsWindow.show() }
                 Spacer()
-                Button("Quit Touchyy") { NSApp.terminate(nil) }
+                Button("Quit Sidl") { NSApp.terminate(nil) }
             }
         }
         .padding()
