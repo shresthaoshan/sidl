@@ -50,6 +50,25 @@ final class HUDTests: XCTestCase {
         XCTAssertEqual(hud.panel.alphaValue, 1)
     }
 
+    /// A fast slide jumps the level. The bar must draw the new level at once, not animate toward it.
+    func testBarFollowsLevelWithoutAnimation() {
+        let hud = HUD()
+        func render() -> Data {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+            let view = hud.panel.contentView!
+            let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)!
+            view.cacheDisplay(in: view.bounds, to: rep)
+            return rep.tiffRepresentation!
+        }
+        hud.show(.volume, level: 0.1)
+        _ = render()
+        hud.show(.volume, level: 0.9)
+        let atOnce = render()
+        RunLoop.main.run(until: Date().addingTimeInterval(1))
+        hud.show(.volume, level: 0.9)  // same level, the fade timer restarts
+        XCTAssertEqual(atOnce, render(), "the bar was still moving 50 ms after the level changed")
+    }
+
     func testUnsupportedHasWarningSymbolAndSameSize() {
         XCTAssertEqual(HUD.symbol(for: .brightness, level: nil), "exclamationmark.triangle.fill")
         let hud = HUD()

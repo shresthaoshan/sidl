@@ -90,9 +90,10 @@ private struct HUDView: View {
                 .font(.system(size: 18, weight: .medium))
                 .frame(width: 26)
             if let level = hud.level {
-                ProgressView(value: Double(level))
-                    .progressViewStyle(.linear)
-                    .frame(width: 140)
+                // Not ProgressView: the native bar animates to each value, so it trails a fast slide.
+                Capsule().fill(.quaternary)
+                    .overlay(alignment: .leading) { Capsule().fill(.secondary).frame(width: 140 * CGFloat(level)) }
+                    .frame(width: 140, height: 6)
                 Text("\(Int((level * 100).rounded()))%")
                     .font(.system(size: 13, weight: .medium).monospacedDigit())
                     .frame(width: 40, alignment: .trailing)
