@@ -11,6 +11,7 @@ baseurl: ""
 plugins:
   - jekyll-remote-theme
   - jekyll-include-cache
+  - jekyll-sitemap  # makes /sitemap.xml and /robots.txt for search engines
 
 # README.md is the home page. The README links to CONTRIBUTING.md and LICENSE on GitHub,
 # because GitHub Pages does not render files with those names without front matter.
