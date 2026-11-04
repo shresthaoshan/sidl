@@ -4,9 +4,7 @@ minimal_mistakes_skin: default  # also: air, aqua, contrast, dark, dirt, mint, n
 
 title: Sidl
 description: Gestures for the edges and corners of your Mac trackpad.
-repository: shresthaoshan/sidl
 url: https://sidl.shresthaoshan.com
-baseurl: ""
 
 plugins:
   - jekyll-remote-theme
