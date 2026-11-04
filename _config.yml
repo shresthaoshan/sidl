@@ -35,3 +35,6 @@ defaults:
       author_profile: false
       toc: true          # table of contents from the page's headings
       toc_sticky: true
+# Sidl has no blog posts, so hide the RSS "Feed" link in the footer.
+atom_feed:
+  hide: true
