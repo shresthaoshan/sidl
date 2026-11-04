@@ -5,6 +5,18 @@ Slide along an edge to change the volume or the screen brightness. Swipe in from
 
 **Website:** [shresthaoshan.github.io/sidl](https://shresthaoshan.github.io/sidl/)
 
+## The story behind Sidl
+
+I was scrolling Threads with nothing on my mind when I saw a post about a tool that adds gesture controls like these to the trackpad you already have.
+
+I went to its website. It cost $9, and that was the sale price.
+
+So I built my own overnight, with the help of a DeepSeek-powered coding harness. That became Sidl: free and open source.
+
+I do not have an Apple Developer Program membership yet (it costs $99 a year 😞), so there is no signed release.
+
+For now, Sidl is here as source code. If you can build it yourself, you save the $9. Pull requests are welcome.
+
 ## Gestures
 
 ### Edge gestures (two fingers)
@@ -63,7 +75,7 @@ Brightness changes the display that has the pointer:
 
 ## Install
 
-There are no releases yet. To use Sidl now, build it from source.
+There are no releases yet (see [The story behind Sidl](#the-story-behind-sidl)). To use Sidl now, build it from source.
 
 ## Build from source
 
