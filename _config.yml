@@ -1,12 +1,12 @@
-# GitHub Pages site: https://shresthaoshan.github.io/sidl/
+# GitHub Pages site: https://sidl.shresthaoshan.com/ (custom domain, set in the repo's Pages settings)
 remote_theme: mmistakes/minimal-mistakes@4.28.1
 minimal_mistakes_skin: default  # also: air, aqua, contrast, dark, dirt, mint, neon, plum, sunrise, catppuccin_latte, catppuccin_mocha
 
 title: Sidl
 description: Gestures for the edges and corners of your Mac trackpad.
 repository: shresthaoshan/sidl
-url: https://shresthaoshan.github.io
-baseurl: /sidl
+url: https://sidl.shresthaoshan.com
+baseurl: ""
 google_site_verification: "QmeGKXT-CPjAMuWhXTEKml40ZLGq0HSMyrZPznaDhuw"  # Google Search Console
 
 plugins:
