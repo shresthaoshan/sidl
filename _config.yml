@@ -7,7 +7,6 @@ description: Gestures for the edges and corners of your Mac trackpad.
 repository: shresthaoshan/sidl
 url: https://sidl.shresthaoshan.com
 baseurl: ""
-google_site_verification: "QmeGKXT-CPjAMuWhXTEKml40ZLGq0HSMyrZPznaDhuw"  # Google Search Console
 
 plugins:
   - jekyll-remote-theme
