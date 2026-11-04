@@ -55,6 +55,7 @@ struct Mapping: Equatable {
     var topRightCorner = DiscreteAction.nextTrack
     var slideSensitivity = defaultSensitivity  // shared by both slides
     var swipeSensitivity = defaultSensitivity  // shared by both swipes
+    var swipeHaptics = true  // a tick on the trackpad when a swipe fires
 
     /// Multiplier on slide travel. Level 3 changes the level 0% to 100% over one full trackpad height.
     var slideMultiplier: Float { [0.5, 0.75, 1, 1.5, 2][Self.validLevel(slideSensitivity) - 1] }
@@ -94,6 +95,7 @@ final class SettingsStore: ObservableObject {
         Self.load("topRightCorner", into: &m.topRightCorner, from: defaults)
         Self.load("slideSensitivity", into: &m.slideSensitivity, from: defaults)
         Self.load("swipeSensitivity", into: &m.swipeSensitivity, from: defaults)
+        Self.load("swipeHaptics", into: &m.swipeHaptics, from: defaults)
         m.slideSensitivity = Mapping.validLevel(m.slideSensitivity)
         m.swipeSensitivity = Mapping.validLevel(m.swipeSensitivity)
         mapping = m
@@ -109,6 +111,7 @@ final class SettingsStore: ObservableObject {
         store("topRightCorner", mapping.topRightCorner)
         store("slideSensitivity", mapping.slideSensitivity)
         store("swipeSensitivity", mapping.swipeSensitivity)
+        store("swipeHaptics", mapping.swipeHaptics)
     }
 
     private func store<T: Encodable>(_ key: String, _ value: T) {

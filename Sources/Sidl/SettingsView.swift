@@ -22,6 +22,7 @@ struct SettingsView: View {
                 if let error = launchAtLogin.error {
                     Text(error).foregroundStyle(.red)
                 }
+                Toggle("Haptic feedback on swipes", isOn: $store.mapping.swipeHaptics)
             }
 
             DiscreteActionRow(title: "Left-edge swipe right", action: $store.mapping.leftEdgeSwipe)

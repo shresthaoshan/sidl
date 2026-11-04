@@ -33,4 +33,8 @@ typedef void (*MTFrameCallback)(uintptr_t device, const MTTouch *touches, int co
 int mt_start(MTFrameCallback callback);
 void mt_stop(void);
 
+// Plays haptic waveform `actuation` on the trackpad `device` (from the frame callback).
+// Returns 0 on success. Call it on the frame callback thread, while `device` is valid.
+int mt_actuate(uintptr_t device, int32_t actuation);
+
 #endif

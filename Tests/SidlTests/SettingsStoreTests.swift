@@ -48,6 +48,13 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(mapping.rightEdgeSlide, .disabled)
     }
 
+    func testSwipeHapticsDefaultsOnAndPersists() {
+        let store = SettingsStore(defaults: defaults)
+        XCTAssertTrue(store.mapping.swipeHaptics)
+        store.mapping.swipeHaptics = false
+        XCTAssertFalse(SettingsStore(defaults: defaults).mapping.swipeHaptics)
+    }
+
     // MARK: Sensitivity
 
     func testSensitivityDefaultsToLevel3() {

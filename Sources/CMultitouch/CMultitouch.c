@@ -61,3 +61,38 @@ void mt_stop(void) {
     CFRelease(devices);
     devices = NULL;
 }
+
+// Haptics through the trackpad's actuator. The public NSHapticFeedbackManager has no strength setting.
+static OSStatus (*MTDeviceGetDeviceID)(MTDeviceRef, uint64_t *);
+static CFTypeRef (*MTActuatorCreateFromDeviceID)(uint64_t);
+static int (*MTActuatorOpen)(CFTypeRef);
+static int (*MTActuatorClose)(CFTypeRef);
+static int (*MTActuatorActuate)(CFTypeRef, int32_t, uint32_t, float, float);
+
+int mt_actuate(uintptr_t device, int32_t actuation) {
+    if (!MTActuatorActuate) {
+        void *lib = dlopen("/System/Library/PrivateFrameworks/MultitouchSupport.framework/MultitouchSupport", RTLD_NOW);
+        if (!lib) return -1;
+        MTDeviceGetDeviceID = dlsym(lib, "MTDeviceGetDeviceID");
+        MTActuatorCreateFromDeviceID = dlsym(lib, "MTActuatorCreateFromDeviceID");
+        MTActuatorOpen = dlsym(lib, "MTActuatorOpen");
+        MTActuatorClose = dlsym(lib, "MTActuatorClose");
+        MTActuatorActuate = dlsym(lib, "MTActuatorActuate");
+        if (!MTDeviceGetDeviceID || !MTActuatorCreateFromDeviceID || !MTActuatorOpen || !MTActuatorClose || !MTActuatorActuate) {
+            MTActuatorActuate = NULL;
+            return -1;
+        }
+    }
+    uint64_t id = 0;
+    if (MTDeviceGetDeviceID((MTDeviceRef)device, &id) != 0) return -2;
+    CFTypeRef actuator = MTActuatorCreateFromDeviceID(id);
+    if (!actuator) return -3;  // this trackpad has no actuator (not Force Touch)
+    // ponytail: opens the actuator on each swipe, cache one per device if this is slow
+    int result = MTActuatorOpen(actuator);
+    if (result == 0) {
+        result = MTActuatorActuate(actuator, actuation, 0, 0, 0);
+        MTActuatorClose(actuator);
+    }
+    CFRelease(actuator);
+    return result;
+}

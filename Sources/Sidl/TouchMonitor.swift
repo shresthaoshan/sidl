@@ -69,6 +69,13 @@ final class TouchMonitor: ObservableObject {
         let time = ProcessInfo.processInfo.systemUptime
         let out = hub.withLock { $0.process(frame, device: device, mapping: mapping, time: time) }
 
+        // Here, not on the main thread: `device` is valid only during the frame callback.
+        // Waveform 6 is a strong short tick. NSHapticFeedbackManager has one strength, and it is too weak.
+        if mapping.swipeHaptics && !out.discrete.isEmpty {
+            let result = mt_actuate(device, 6)
+            if result != 0 { NSLog("Sidl: haptic failed: \(result)") }
+        }
+
         DispatchQueue.main.async {
             self.touches = frame
             for action in out.discrete {
