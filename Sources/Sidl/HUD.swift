@@ -20,6 +20,15 @@ final class HUD: ObservableObject {
         // A zero-length animation also stops a fade that is running now.
         NSAnimationContext.runAnimationGroup { $0.duration = 0; panel.animator().alphaValue = 1 }
         panel.orderFrontRegardless()
+        // After a long run (sleep, display changes), macOS can stop showing an old panel on
+        // full-screen Spaces, even with .canJoinAllSpaces. A new panel joins the active Space.
+        if !panel.isOnActiveSpace {
+            NSLog("Sidl: HUD panel is not on the active Space, making a new one")
+            panel.orderOut(nil)
+            panel = makePanel()
+            place()
+            panel.orderFrontRegardless()
+        }
 
         generation += 1
         let current = generation

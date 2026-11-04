@@ -16,6 +16,7 @@ final class HUDTests: XCTestCase {
         XCTAssertEqual(hud.action, .brightness)
         XCTAssertEqual(hud.level, 0.4)
         XCTAssertTrue(hud.panel.isVisible)
+        XCTAssertTrue(hud.panel.isOnActiveSpace, "the HUD must show on the Space the user looks at")
 
         RunLoop.main.run(until: Date().addingTimeInterval(hud.fadeDelay + 0.6))
         XCTAssertFalse(hud.panel.isVisible)
