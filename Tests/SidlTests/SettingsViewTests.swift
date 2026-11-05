@@ -30,3 +30,21 @@ final class GestureSpotTests: XCTestCase {
         XCTAssertFalse(GestureSpot.topEdgeSwipe.isDisabled(in: mapping))
     }
 }
+
+final class TrackpadSizeTests: XCTestCase {
+    func testRealSizeKeepsProportions() {
+        let size = TrackpadSize.fit(surface: CGSize(width: 120, height: 75), pointsPerMillimeter: 6, maxWidth: 1000)
+        XCTAssertEqual(size, CGSize(width: 720, height: 450))
+    }
+
+    func testTooWideIsLimited() {
+        let size = TrackpadSize.fit(surface: CGSize(width: 160, height: 100), pointsPerMillimeter: 6, maxWidth: 800)
+        XCTAssertEqual(size, CGSize(width: 800, height: 500))
+    }
+
+    func testUnknownSizeUsesFallback() {
+        XCTAssertEqual(TrackpadSize.fit(surface: .zero, pointsPerMillimeter: 6, maxWidth: 800), TrackpadSize.fallback)
+        XCTAssertEqual(TrackpadSize.fit(surface: CGSize(width: 120, height: 75), pointsPerMillimeter: 0, maxWidth: 800),
+                       TrackpadSize.fallback)
+    }
+}

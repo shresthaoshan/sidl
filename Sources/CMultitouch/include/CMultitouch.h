@@ -37,4 +37,7 @@ void mt_stop(void);
 // Returns 0 on success. Call it on the frame callback thread, while `device` is valid.
 int mt_actuate(uintptr_t device, int32_t actuation);
 
+// Size of the default trackpad's touch surface, in 1/100 mm. Returns 0 on success.
+int mt_surface_size(int32_t *width, int32_t *height);
+
 #endif

@@ -96,3 +96,16 @@ int mt_actuate(uintptr_t device, int32_t actuation) {
     CFRelease(actuator);
     return result;
 }
+
+int mt_surface_size(int32_t *width, int32_t *height) {
+    void *lib = dlopen("/System/Library/PrivateFrameworks/MultitouchSupport.framework/MultitouchSupport", RTLD_NOW);
+    if (!lib) return -1;
+    MTDeviceRef (*createDefault)(void) = dlsym(lib, "MTDeviceCreateDefault");
+    OSStatus (*dimensions)(MTDeviceRef, int32_t *, int32_t *) = dlsym(lib, "MTDeviceGetSensorSurfaceDimensions");
+    if (!createDefault || !dimensions) return -1;
+    MTDeviceRef dev = createDefault();
+    if (!dev) return -2;
+    OSStatus result = dimensions(dev, width, height);
+    CFRelease(dev);
+    return result;
+}

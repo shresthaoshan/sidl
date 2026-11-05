@@ -1,56 +1,140 @@
 import AppKit
+import CMultitouch
 import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
+    enum Tab: String, CaseIterable { case gestures = "Gestures", settings = "Settings" }
+
     @ObservedObject var store = SettingsStore.shared
     @ObservedObject var launchAtLogin = LaunchAtLogin.shared
-    @State private var selected = GestureSpot.leftEdgeSwipe
+    @ObservedObject var inputFilter = InputFilter.shared
+    @State var tab = Tab.gestures
+    @State var selected = GestureSpot.leftEdgeSwipe
+    var mapSize = TrackpadSize.onScreen(.main)
 
     var body: some View {
-        Form {
-            Section("General") {
-                Toggle("Launch at login", isOn: Binding(get: { launchAtLogin.isEnabled },
-                                                        set: { launchAtLogin.setEnabled($0) }))
-                if launchAtLogin.status == .requiresApproval {
-                    HStack {
-                        Text("Approve Sidl in Login Items.").foregroundStyle(.secondary)
-                        Spacer()
-                        Button("Open Login Items") { SMAppService.openSystemSettingsLoginItems() }
-                    }
-                }
-                if let error = launchAtLogin.error {
-                    Text(error).foregroundStyle(.red)
-                }
-                Toggle("Haptic feedback on swipes", isOn: $store.mapping.swipeHaptics)
+        VStack(spacing: 0) {
+            Picker("", selection: $tab) {
+                ForEach(Tab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .padding(.top, 12)
 
-            Section("Sensitivity") {
-                SensitivityRow(title: "Slide sensitivity", level: $store.mapping.slideSensitivity)
-                SensitivityRow(title: "Swipe sensitivity", level: $store.mapping.swipeSensitivity)
+            switch tab {
+            // Not a Form: a grouped Form limits rows to about 600 pt, less than a real-size drawing.
+            case .gestures: gestures.padding(20)
+            case .settings: Form { settings }.formStyle(.grouped)
             }
+        }
+        .frame(width: mapSize.width + 40)
+        .onAppear { launchAtLogin.refresh() }
+    }
 
-            Section {
-                GestureMap(mapping: store.mapping, selected: $selected)
-            } footer: {
-                Text("Click a gesture to change its action.").foregroundStyle(.secondary)
-            }
-
-            Section(selected.title) {
-                Group {
+    @ViewBuilder private var gestures: some View {
+        VStack(spacing: 16) {
+            GestureMap(mapping: store.mapping, selected: $selected).frame(width: mapSize.width, height: mapSize.height)
+            HStack(alignment: .firstTextBaseline) {
+                Text(selected.title).font(.headline)
+                Spacer()
+                VStack(alignment: .trailing) {
                     if let path = selected.discrete {
-                        DiscreteActionRow(title: "Action", action: $store.mapping[dynamicMember: path])
+                        DiscreteActionRow(title: selected.title, action: $store.mapping[dynamicMember: path])
                     } else if let path = selected.continuous {
-                        ContinuousActionRow(title: "Action", action: $store.mapping[dynamicMember: path])
+                        ContinuousActionRow(title: selected.title, action: $store.mapping[dynamicMember: path])
                     }
                 }
+                .labelsHidden()
+                .frame(width: 240)
                 .id(selected)  // a new gesture gets a fresh row, so a running shortcut recorder stops
             }
         }
-        .formStyle(.grouped)
-        .frame(width: 420)
-        .onAppear { launchAtLogin.refresh() }
+    }
+
+    @ViewBuilder private var settings: some View {
+        Section("General") {
+            Toggle("Launch at login", isOn: Binding(get: { launchAtLogin.isEnabled },
+                                                    set: { launchAtLogin.setEnabled($0) }))
+            if launchAtLogin.status == .requiresApproval {
+                HStack {
+                    Text("Approve Sidl in Login Items.").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Open Login Items") { SMAppService.openSystemSettingsLoginItems() }
+                }
+            }
+            if let error = launchAtLogin.error {
+                Text(error).foregroundStyle(.red)
+            }
+            Toggle("Haptic feedback on swipes", isOn: $store.mapping.swipeHaptics)
+        }
+
+        Section("Sensitivity") {
+            SensitivityRow(title: "Slide sensitivity", level: $store.mapping.slideSensitivity)
+            SensitivityRow(title: "Swipe sensitivity", level: $store.mapping.swipeSensitivity)
+        }
+
+        Section {
+            HStack {
+                Label("Accessibility", systemImage: "accessibility")
+                Spacer()
+                if inputFilter.isActive {
+                    StatusBadge(text: "Granted", color: .green)
+                } else {
+                    Button("Open Settings") {
+                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                    }
+                }
+            }
+        } header: {
+            Text("Permissions")
+        } footer: {
+            Text("Needed for scroll blocking, corner clicks, and the Screenshot and Keyboard shortcut actions.")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct StatusBadge: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 6, height: 6)
+            Text(text)
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 2)
+        .background(Capsule().fill(color.opacity(0.12)))
+    }
+}
+
+/// The trackpad drawing at the real size of the trackpad.
+enum TrackpadSize {
+    static let fallback = CGSize(width: 420, height: 262)
+
+    /// The default trackpad at real size on `screen`, at most 80% of the screen width.
+    static func onScreen(_ screen: NSScreen?) -> CGSize {
+        var w: Int32 = 0, h: Int32 = 0
+        guard mt_surface_size(&w, &h) == 0, let screen,
+              let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+        else { return fallback }
+        let millimeters = CGDisplayScreenSize(id).width
+        guard millimeters > 0 else { return fallback }
+        return fit(surface: CGSize(width: CGFloat(w) / 100, height: CGFloat(h) / 100),
+                   pointsPerMillimeter: screen.frame.width / millimeters, maxWidth: screen.frame.width * 0.8)
+    }
+
+    /// `surface` is in millimeters. Keeps the trackpad's proportions.
+    static func fit(surface: CGSize, pointsPerMillimeter: CGFloat, maxWidth: CGFloat) -> CGSize {
+        guard surface.width > 0, surface.height > 0, pointsPerMillimeter > 0 else { return fallback }
+        let width = min(surface.width * pointsPerMillimeter, maxWidth)
+        return CGSize(width: width.rounded(), height: (width * surface.height / surface.width).rounded())
     }
 }
 
@@ -71,6 +155,18 @@ enum GestureSpot: CaseIterable, Identifiable {
         }
     }
 
+    /// Short name, shown under the action on the drawing.
+    var name: String {
+        switch self {
+        case .topLeftCorner: "Top-left corner"
+        case .topRightCorner: "Top-right corner"
+        case .topEdgeSwipe: "Top-edge swipe"
+        case .leftEdgeSwipe: "Left-edge swipe"
+        case .leftEdgeSlide: "Left-edge slide"
+        case .rightEdgeSlide: "Right-edge slide"
+        }
+    }
+
     var symbol: String {
         switch self {
         case .topLeftCorner, .topRightCorner: "cursorarrow.click"
@@ -80,15 +176,16 @@ enum GestureSpot: CaseIterable, Identifiable {
         }
     }
 
-    /// Center of the mark, as a fraction of the drawing. The origin is the top-left corner.
+    /// Where the mark is, as a fraction of the drawing. The origin is the top-left corner.
+    /// A mark on the left starts at x, a mark on the right ends at x, and the top-edge mark is centered on x.
     var point: CGPoint {
         switch self {
-        case .topLeftCorner: CGPoint(x: 0.17, y: 0.14)
-        case .topRightCorner: CGPoint(x: 0.83, y: 0.14)
+        case .topLeftCorner: CGPoint(x: 0.04, y: 0.14)
+        case .topRightCorner: CGPoint(x: 0.96, y: 0.14)
         case .topEdgeSwipe: CGPoint(x: 0.5, y: 0.14)
-        case .leftEdgeSwipe: CGPoint(x: 0.38, y: 0.45)
-        case .leftEdgeSlide: CGPoint(x: 0.17, y: 0.72)
-        case .rightEdgeSlide: CGPoint(x: 0.83, y: 0.72)
+        case .leftEdgeSwipe: CGPoint(x: 0.04, y: 0.45)
+        case .leftEdgeSlide: CGPoint(x: 0.04, y: 0.66)
+        case .rightEdgeSlide: CGPoint(x: 0.96, y: 0.55)
         }
     }
 
@@ -121,7 +218,7 @@ enum GestureSpot: CaseIterable, Identifiable {
     }
 }
 
-/// The trackpad, with the real gesture zones shaded and one mark for each gesture.
+/// The trackpad, with one mark for each gesture. The selected gesture's trigger zone is blue.
 private struct GestureMap: View {
     let mapping: Mapping
     @Binding var selected: GestureSpot
@@ -134,50 +231,98 @@ private struct GestureMap: View {
         GeometryReader { geo in
             let w = geo.size.width, h = geo.size.height
             ZStack(alignment: .topLeading) {
-                ZStack {
-                    Rectangle().fill(.quaternary.opacity(0.5))
-                    Path { p in
-                        p.addRect(CGRect(x: 0, y: 0, width: w * Self.edge, height: h))
-                        p.addRect(CGRect(x: w * (1 - Self.edge), y: 0, width: w * Self.edge, height: h))
-                        p.addRect(CGRect(x: 0, y: 0, width: w, height: h * Self.edge))
-                    }
-                    .fill(.quaternary.opacity(0.6))
-                    Path { p in
-                        p.addRect(CGRect(x: 0, y: 0, width: w * Self.corner, height: h * Self.corner))
-                        p.addRect(CGRect(x: w * (1 - Self.corner), y: 0, width: w * Self.corner, height: h * Self.corner))
-                    }
-                    .fill(.quaternary)
+                RoundedRectangle(cornerRadius: 12).fill(Self.silver)
+                RoundedRectangle(cornerRadius: 12).strokeBorder(Color(red: 0.53, green: 0.56, blue: 0.58))
+                // The selected gesture's trigger zone, at the size the recognizers use.
+                let zone = zone(w: w, h: h)
+                Group {
+                    Color.accentColor.opacity(0.25)
+                    RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: 3)
                 }
+                .mask(Rectangle().frame(width: zone.width, height: zone.height).position(x: zone.midX, y: zone.midY))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                RoundedRectangle(cornerRadius: 12).stroke(.secondary)
+                VStack(spacing: 4) {
+                    Image(systemName: "hand.point.up.left").font(.title3)
+                    Text("Click a gesture to change it").font(.caption)
+                }
+                .foregroundStyle(Self.dim)
+                .position(x: w / 2, y: h * 0.82)
                 ForEach(GestureSpot.allCases) { spot in
-                    mark(spot).position(x: spot.point.x * w, y: spot.point.y * h)
+                    mark(spot)
+                        .frame(width: 150, alignment: spot.alignment)
+                        .position(x: spot.point.x * w + spot.offset, y: spot.point.y * h)
                 }
             }
         }
-        .aspectRatio(1.6, contentMode: .fit)
+        .environment(\.colorScheme, .light)  // silver in dark mode too, like the real trackpad, so keep dark text
+    }
+
+    /// Brushed aluminum: light at the top, a little darker at the bottom.
+    // Gray text is darker than .secondary, so it stays readable on silver.
+    private static let dim = Color(white: 0.27)
+    private static let silver = LinearGradient(colors: [Color(red: 0.70, green: 0.73, blue: 0.74),   // #B3BABD
+                                                        Color(red: 0.64, green: 0.67, blue: 0.68)],  // #A2AAAD, Apple aluminum
+                                               startPoint: .top, endPoint: .bottom)
+
+    /// Where the selected gesture must start, in points.
+    private func zone(w: CGFloat, h: CGFloat) -> CGRect {
+        switch selected {
+        case .leftEdgeSwipe, .leftEdgeSlide: CGRect(x: 0, y: 0, width: w * Self.edge, height: h)
+        case .rightEdgeSlide: CGRect(x: w * (1 - Self.edge), y: 0, width: w * Self.edge, height: h)
+        case .topEdgeSwipe: CGRect(x: 0, y: 0, width: w, height: h * Self.edge)
+        case .topLeftCorner: CGRect(x: 0, y: 0, width: w * Self.corner, height: h * Self.corner)
+        case .topRightCorner: CGRect(x: w * (1 - Self.corner), y: 0, width: w * Self.corner, height: h * Self.corner)
+        }
     }
 
     private func mark(_ spot: GestureSpot) -> some View {
         let isSelected = spot == selected
+        let disabled = spot.isDisabled(in: mapping)
+        let icon = Image(systemName: spot.symbol)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(isSelected ? Color.white : disabled ? Self.dim : Color.accentColor)
+            .frame(width: 26, height: 26)
+            .background(RoundedRectangle(cornerRadius: 7).fill(isSelected ? Color.accentColor : Color.white.opacity(disabled ? 0.2 : 0.55)))
+        let trailing = spot.alignment == .trailing
         return Button { selected = spot } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 7) {
                 // The icon faces the edge of its gesture.
-                if spot.point.x <= 0.5 { Image(systemName: spot.symbol) }
-                Text(spot.actionTitle(in: mapping)).lineLimit(1).truncationMode(.tail)
-                if spot.point.x > 0.5 { Image(systemName: spot.symbol) }
+                if !trailing { icon }
+                VStack(alignment: trailing ? .trailing : .leading, spacing: 1) {
+                    Text(spot.actionTitle(in: mapping))
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(disabled ? Self.dim : Color.primary)
+                    Text(spot.name).font(.caption2).foregroundStyle(Self.dim)
+                }
+                .lineLimit(1)
+                .truncationMode(.tail)
+                if trailing { icon }
             }
-                .font(.caption.weight(.medium))
-                .frame(maxWidth: 90)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 4)
-                .foregroundStyle(isSelected ? Color.white : spot.isDisabled(in: mapping) ? Color.secondary : Color.primary)
-                .background(Capsule().fill(isSelected ? Color.accentColor : Color(nsColor: .controlBackgroundColor)))
-                .overlay(Capsule().strokeBorder(isSelected ? Color.clear : Color(nsColor: .separatorColor)))
-                .contentShape(Capsule())
+            .padding(5)
+            .background(RoundedRectangle(cornerRadius: 9).fill(isSelected ? Color.white.opacity(0.35) : Color.clear))
+            .contentShape(RoundedRectangle(cornerRadius: 9))
         }
         .buttonStyle(.plain)
         .help(spot.title)
+    }
+}
+
+private extension GestureSpot {
+    var alignment: Alignment {
+        switch self {
+        case .topEdgeSwipe: .center
+        case .topRightCorner, .rightEdgeSlide: .trailing
+        default: .leading
+        }
+    }
+
+    /// Moves the 150 pt mark frame so that its leading or trailing edge is at `point.x`.
+    var offset: CGFloat {
+        switch alignment {
+        case .leading: 75
+        case .trailing: -75
+        default: 0
+        }
     }
 }
 
