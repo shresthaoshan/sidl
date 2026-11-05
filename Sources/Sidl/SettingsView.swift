@@ -11,7 +11,7 @@ struct SettingsView: View {
     @ObservedObject var launchAtLogin = LaunchAtLogin.shared
     @ObservedObject var inputFilter = InputFilter.shared
     @State var tab = Tab.gestures
-    @State var selected = GestureSpot.leftEdgeSwipe
+    @State var selected: GestureSpot?  // none until the user clicks a gesture
     var mapSize = TrackpadSize.onScreen(.main)
 
     var body: some View {
@@ -37,19 +37,26 @@ struct SettingsView: View {
     @ViewBuilder private var gestures: some View {
         VStack(spacing: 16) {
             GestureMap(mapping: store.mapping, selected: $selected).frame(width: mapSize.width, height: mapSize.height)
-            HStack(alignment: .firstTextBaseline) {
-                Text(selected.title).font(.headline)
-                Spacer()
-                VStack(alignment: .trailing) {
-                    if let path = selected.discrete {
-                        DiscreteActionRow(title: selected.title, action: $store.mapping[dynamicMember: path])
-                    } else if let path = selected.continuous {
-                        ContinuousActionRow(title: selected.title, action: $store.mapping[dynamicMember: path])
+            if let selected {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(selected.title).font(.headline)
+                    Spacer()
+                    VStack(alignment: .trailing) {
+                        if let path = selected.discrete {
+                            DiscreteActionRow(title: selected.title, action: $store.mapping[dynamicMember: path])
+                        } else if let path = selected.continuous {
+                            ContinuousActionRow(title: selected.title, action: $store.mapping[dynamicMember: path])
+                        }
                     }
+                    .labelsHidden()
+                    .frame(width: 240)
+                    .id(selected)  // a new gesture gets a fresh row, so a running shortcut recorder stops
                 }
-                .labelsHidden()
-                .frame(width: 240)
-                .id(selected)  // a new gesture gets a fresh row, so a running shortcut recorder stops
+            } else {
+                // The same height as the row above, so the window does not change size.
+                Text("Select a gesture on the trackpad to change its action.")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
             }
         }
     }
@@ -219,9 +226,10 @@ enum GestureSpot: CaseIterable, Identifiable {
 }
 
 /// The trackpad, with one mark for each gesture. The selected gesture's trigger zone is blue.
+/// A click on the empty trackpad clears the selection.
 private struct GestureMap: View {
     let mapping: Mapping
-    @Binding var selected: GestureSpot
+    @Binding var selected: GestureSpot?
     @ObservedObject var activity = GestureActivity.shared
     @State private var pulse: GestureSpot?
 
@@ -234,9 +242,10 @@ private struct GestureMap: View {
             let w = geo.size.width, h = geo.size.height
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 12).fill(Self.silver)
+                    .onTapGesture { selected = nil }  // the marks are buttons above it, so they keep their clicks
                 RoundedRectangle(cornerRadius: 12).strokeBorder(Color(red: 0.53, green: 0.56, blue: 0.58))
                 // The selected gesture's trigger zone, at the size the recognizers use.
-                zoneHighlight(selected, w: w, h: h)
+                if let selected { zoneHighlight(selected, w: w, h: h) }
                 ForEach(GestureSpot.allCases.filter(activity.sliding.contains)) { zoneHighlight($0, w: w, h: h) }
                 // A new id for each fire, so the flash and the ripple start again.
                 if let fire = activity.lastFire {
@@ -251,6 +260,7 @@ private struct GestureMap: View {
                 }
                 .foregroundStyle(Self.dim)
                 .position(x: w / 2, y: h * 0.82)
+                .allowsHitTesting(false)  // a click on the hint is a click on the empty trackpad
                 ForEach(GestureSpot.allCases) { spot in
                     mark(spot)
                         .frame(width: 150, alignment: spot.alignment)
