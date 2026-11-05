@@ -48,3 +48,24 @@ final class TrackpadSizeTests: XCTestCase {
                        TrackpadSize.fallback)
     }
 }
+
+final class TouchDotsTests: XCTestCase {
+    private let size = CGSize(width: 400, height: 250)
+
+    private func point(_ x: Float, _ y: Float) -> CGPoint {
+        TouchDots.point(for: Touch(id: 1, x: x, y: y, state: 4, size: 1), in: size)
+    }
+
+    func testDotsStayInsideTheDrawing() {
+        let r = TouchDots.dotSize / 2
+        for (x, y) in [(Float(0), Float(1)), (1, 1), (0, 0), (1, 0), (1.05, -0.02)] {
+            let p = point(x, y)
+            XCTAssertTrue(CGRect(origin: .zero, size: size).insetBy(dx: r - 0.01, dy: r - 0.01).contains(p), "\(p)")
+        }
+    }
+
+    func testTopOfTheTrackpadIsTopOfTheDrawing() {
+        XCTAssertLessThan(point(0.5, 0.9).y, point(0.5, 0.1).y)
+        XCTAssertLessThan(point(0.1, 0.5).x, point(0.9, 0.5).x)
+    }
+}

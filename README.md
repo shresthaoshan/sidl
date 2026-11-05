@@ -110,7 +110,7 @@ SIGN_IDENTITY="My Certificate" scripts/bundle.sh
 ### Permissions
 
 When Sidl starts, macOS asks for Accessibility permission. Turn on **Sidl** in **System Settings → Privacy & Security → Accessibility**.
-The menu bar panel shows `Scroll blocking: on` when the permission is active.
+In Sidl Settings, the **Settings** tab shows **Granted** next to Accessibility when the permission is active.
 
 ## How it works
 

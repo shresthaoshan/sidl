@@ -53,10 +53,7 @@ final class InputFilter: ObservableObject {
             let action = cornerAction()
             guard clicks.handle(.down, cornerAction: action != nil), let action else { return pass }
             // Run the action after the tap returns, so the event tap stays fast.
-            DispatchQueue.main.async {
-                TouchMonitor.shared.report(action.title)
-                Actions.perform(action)
-            }
+            DispatchQueue.main.async { Actions.perform(action) }
             return nil
         case .leftMouseDragged:
             return clicks.handle(.dragged, cornerAction: false) ? nil : pass

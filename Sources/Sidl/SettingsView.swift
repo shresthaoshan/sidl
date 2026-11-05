@@ -308,21 +308,30 @@ private struct GestureMap: View {
     }
 }
 
-/// Live fingers on the drawing, as in the debug view. Its own view, so only the dots redraw on each trackpad frame.
-private struct TouchDots: View {
+/// Live fingers on the drawing. Its own view, so only the dots redraw on each trackpad frame.
+struct TouchDots: View {
     @ObservedObject var monitor = TouchMonitor.shared
+
+    static let dotSize: CGFloat = 24
 
     var body: some View {
         GeometryReader { geo in
-            ForEach(TrackpadView.layout(monitor.touches, in: geo.size), id: \.touch.id) { p in
+            ForEach(monitor.touches) { t in
                 Circle()
-                    .fill(p.touch.state == 4 ? Color.accentColor : Color.gray)
+                    .fill(t.state == 4 ? Color.accentColor : Color.gray)  // 4: touching
                     .opacity(0.7)
-                    .frame(width: TrackpadView.dotSize, height: TrackpadView.dotSize)
-                    .position(p.dot)
+                    .frame(width: Self.dotSize, height: Self.dotSize)
+                    .position(Self.point(for: t, in: geo.size))
             }
         }
         .allowsHitTesting(false)  // clicks go to the marks under the dots
+    }
+
+    /// The dot center, fully inside the drawing. Touch y is from the bottom, view y is from the top.
+    static func point(for t: Touch, in size: CGSize) -> CGPoint {
+        let inset = dotSize / 2
+        return CGPoint(x: inset + CGFloat(min(max(t.x, 0), 1)) * (size.width - 2 * inset),
+                       y: inset + CGFloat(1 - min(max(t.y, 0), 1)) * (size.height - 2 * inset))
     }
 }
 

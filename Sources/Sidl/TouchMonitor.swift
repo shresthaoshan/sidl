@@ -16,8 +16,6 @@ final class TouchMonitor: ObservableObject {
     static let shared = TouchMonitor()
 
     @Published private(set) var touches: [Touch] = []
-    @Published private(set) var deviceCount: Int32 = 0
-    @Published private(set) var lastGesture = "none"
 
     /// Read by the touch threads and the event tap. The lock also serializes frames from different trackpads.
     private let hub = OSAllocatedUnfairLock(initialState: TouchHub())
@@ -40,7 +38,6 @@ final class TouchMonitor: ObservableObject {
     func corner(at time: Double) -> Corner? { hub.withLock { $0.corner(at: time) } }
 
     /// Shows an action in the panel's "Last gesture" line. Main thread only.
-    func report(_ title: String) { lastGesture = title }
 
     /// One device change often sends several notifications, so wait until they stop.
     private func scheduleRestart() {
@@ -61,7 +58,7 @@ final class TouchMonitor: ObservableObject {
             TouchMonitor.shared.handle(frame, device: UInt(device))
         }
         hub.withLock { $0.removeAll() }  // device IDs from the old list are no longer valid
-        deviceCount = count
+        if count < 0 { NSLog("Sidl: failed to load MultitouchSupport") }
     }
 
     private func handle(_ frame: [Touch], device: UInt) {
@@ -78,19 +75,14 @@ final class TouchMonitor: ObservableObject {
 
         DispatchQueue.main.async {
             self.touches = frame
-            for action in out.discrete {
-                self.lastGesture = action.title
-                Actions.perform(action)
-            }
+            for action in out.discrete { Actions.perform(action) }
             for (action, delta) in out.continuous {
                 switch Actions.adjust(action, by: delta) {
                 case .level(let level):
-                    self.lastGesture = "\(action.title) \(Int((level * 100).rounded()))%"
                     HUD.shared.show(action, level: level)
                 case .pending:
                     break  // the HUD appears when the level is known
                 case .unsupported:
-                    self.lastGesture = "\(action.title) not supported"
                     HUD.shared.show(action, level: nil)
                 }
             }

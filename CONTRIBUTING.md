@@ -88,7 +88,7 @@ A new setting must not break existing users. When a stored value is missing or c
 Unit tests cannot check how a gesture feels. Before you send a gesture change:
 
 1. Run `scripts/bundle.sh && open Sidl.app`.
-2. Open the menu bar panel. It shows each finger's position and state, and the last gesture.
+2. Open Sidl Settings. The **Gestures** tab shows each finger on the trackpad drawing, and the trigger zone of the selected gesture.
 3. Try the gesture, and also try normal scrolling and the macOS gestures near the same edge (for example, Notification Center on the right edge).
 
 In the pull request, write which Mac, which trackpad, and which macOS version you used.
@@ -122,7 +122,7 @@ Open an issue with:
 - Your macOS version and Mac model.
 - The trackpad: built-in or Magic Trackpad, and whether more than one is connected.
 - The steps to reproduce, what you expected, and what happened.
-- What the menu bar panel shows: `Scroll blocking: on` or `off`, the device count, and the last gesture.
+- Whether the **Settings** tab in Sidl Settings shows Accessibility as **Granted**.
 
 ## License
 

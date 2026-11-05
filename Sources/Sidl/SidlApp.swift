@@ -10,8 +10,9 @@ struct SidlApp: App {
 
     var body: some Scene {
         MenuBarExtra("Sidl", systemImage: "hand.draw") {
-            DebugView()
+            Button("Settings…") { SettingsWindow.show() }.keyboardShortcut(",")
+            Divider()
+            Button("Quit Sidl") { NSApp.terminate(nil) }.keyboardShortcut("q")
         }
-        .menuBarExtraStyle(.window)
     }
 }
