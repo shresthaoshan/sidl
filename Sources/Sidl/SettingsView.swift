@@ -252,6 +252,7 @@ private struct GestureMap: View {
                         .frame(width: 150, alignment: spot.alignment)
                         .position(x: spot.point.x * w + spot.offset, y: spot.point.y * h)
                 }
+                TouchDots()
             }
         }
         .environment(\.colorScheme, .light)  // silver in dark mode too, like the real trackpad, so keep dark text
@@ -304,6 +305,24 @@ private struct GestureMap: View {
         }
         .buttonStyle(.plain)
         .help(spot.title)
+    }
+}
+
+/// Live fingers on the drawing, as in the debug view. Its own view, so only the dots redraw on each trackpad frame.
+private struct TouchDots: View {
+    @ObservedObject var monitor = TouchMonitor.shared
+
+    var body: some View {
+        GeometryReader { geo in
+            ForEach(TrackpadView.layout(monitor.touches, in: geo.size), id: \.touch.id) { p in
+                Circle()
+                    .fill(p.touch.state == 4 ? Color.accentColor : Color.gray)
+                    .opacity(0.7)
+                    .frame(width: TrackpadView.dotSize, height: TrackpadView.dotSize)
+                    .position(p.dot)
+            }
+        }
+        .allowsHitTesting(false)  // clicks go to the marks under the dots
     }
 }
 
