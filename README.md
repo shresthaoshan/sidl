@@ -54,7 +54,7 @@ Clicks with two fingers, and clicks outside the top corners, work as normal.
 
 ## Features
 
-- **Settings window:** open it from the menu bar icon. It shows your trackpad at real size, with each gesture where it happens, its trigger zone, and your fingers live. Click a gesture to choose its action, or turn it off.
+- **Settings window:** open it from the menu bar icon. It shows your trackpad at real size, with each gesture where it happens, its trigger zone, and your fingers live. When a gesture runs, it lights up on the drawing. Click a gesture to choose its action, or turn it off.
 - **Sensitivity:** one setting for slides (how far you slide for a full change) and one for swipes (how far you swipe before it triggers). Each has levels 1 to 5.
 - **On-screen display:** shows the volume or brightness level while you slide.
 - **Haptic feedback:** a tick on the trackpad when a swipe fires. You can turn it off in Settings.

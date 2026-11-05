@@ -89,6 +89,7 @@ Unit tests cannot check how a gesture feels. Before you send a gesture change:
 
 1. Run `scripts/bundle.sh && open Sidl.app`.
 2. Open Sidl Settings. The **Gestures** tab shows each finger on the trackpad drawing, and the trigger zone of the selected gesture.
+   When a gesture runs, its mark pulses and its zone flashes, so you can see which gesture Sidl recognized.
 3. Try the gesture, and also try normal scrolling and the macOS gestures near the same edge (for example, Notification Center on the right edge).
 
 In the pull request, write which Mac, which trackpad, and which macOS version you used.
