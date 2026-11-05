@@ -83,10 +83,11 @@ final class TouchMonitor: ObservableObject {
                 for spot in out.spots { GestureActivity.shared.record(spot, at: center) }
             }
             for action in out.discrete { Actions.perform(action) }
-            for (action, delta) in out.continuous {
+            for (spot, action, delta) in out.continuous {
                 switch Actions.adjust(action, by: delta) {
                 case .level(let level):
                     HUD.shared.show(action, level: level)
+                    GestureActivity.shared.setLevel(level, for: spot)
                 case .pending:
                     break  // the HUD appears when the level is known
                 case .unsupported:
@@ -110,6 +111,8 @@ final class GestureActivity: ObservableObject {
     @Published private(set) var lastFire: Fire?
     /// Slides that are running now. Changes only when a slide starts or ends, not on every frame.
     @Published private(set) var sliding: Set<GestureSpot> = []
+    /// The level after the last slide on each edge, 0..1. Changes only when the shown percent changes.
+    @Published private(set) var levels: [GestureSpot: Float] = [:]
 
     private var count = 0
     private var slideEnds: [GestureSpot: DispatchWorkItem] = [:]
@@ -126,5 +129,11 @@ final class GestureActivity: ObservableObject {
         let end = DispatchWorkItem { [weak self] in self?.sliding.remove(spot) }
         slideEnds[spot] = end
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: end)
+    }
+
+    func setLevel(_ level: Float, for spot: GestureSpot) {
+        let percent = (level * 100).rounded()
+        guard levels[spot].map({ ($0 * 100).rounded() }) != percent else { return }
+        levels[spot] = percent / 100
     }
 }

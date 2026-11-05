@@ -84,4 +84,12 @@ final class GestureActivityTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.5))
         XCTAssertTrue(activity.sliding.isEmpty, "the slide ends when no frame comes")
     }
+
+    func testKeepsTheLastLevelForEachSlide() {
+        let activity = GestureActivity()
+        activity.setLevel(0.42, for: .rightEdgeSlide)
+        activity.setLevel(0.8, for: .leftEdgeSlide)
+        activity.setLevel(0.421, for: .rightEdgeSlide)  // the same percent: no change
+        XCTAssertEqual(activity.levels, [.rightEdgeSlide: 0.42, .leftEdgeSlide: 0.8])
+    }
 }

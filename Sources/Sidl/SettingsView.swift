@@ -289,8 +289,15 @@ private struct GestureMap: View {
         default: fill = zone; end = .center
         }
         let start: UnitPoint = end == .trailing ? .leading : end == .bottom ? .top : .center
+        let level = activity.levels[spot].map { CGFloat($0) }
         return ZStack {
-            if end == .center {
+            if let level {
+                // A slide is a meter: the zone fills from the bottom up to the level of the last slide.
+                Color.accentColor.opacity(0.12).frame(width: fill.width, height: fill.height).position(x: fill.midX, y: fill.midY)
+                Color.accentColor.opacity(0.45)
+                    .frame(width: fill.width, height: fill.height * level)
+                    .position(x: fill.midX, y: fill.maxY - fill.height * level / 2)
+            } else if end == .center {
                 Color.accentColor.opacity(0.25).frame(width: fill.width, height: fill.height).position(x: fill.midX, y: fill.midY)
             } else {
                 LinearGradient(colors: [Color.accentColor.opacity(0.45), Color.accentColor.opacity(0)], startPoint: start, endPoint: end)

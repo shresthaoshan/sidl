@@ -4,7 +4,7 @@ struct GestureRouter {
     struct Output {
         var claimsScroll = false
         var discrete: [DiscreteAction] = []
-        var continuous: [(action: ContinuousAction, delta: Float)] = []
+        var continuous: [(spot: GestureSpot, action: ContinuousAction, delta: Float)] = []
         var spots: [GestureSpot] = []  // the gestures behind `discrete` and `continuous`, for the Settings drawing
     }
 
@@ -37,8 +37,8 @@ struct GestureRouter {
             || (leftSlideOn && leftEdgeSlide.claimsScroll) || (rightSlideOn && rightEdgeSlide.claimsScroll)
         if swipedLeft && leftSwipeOn && !sliding { out.discrete.append(m.leftEdgeSwipe); out.spots.append(.leftEdgeSwipe) }
         if swipedTop && topSwipeOn && !sliding { out.discrete.append(m.topEdgeSwipe); out.spots.append(.topEdgeSwipe) }
-        if leftDelta != 0 && leftSlideOn { out.continuous.append((m.leftEdgeSlide, leftDelta)); out.spots.append(.leftEdgeSlide) }
-        if rightDelta != 0 && rightSlideOn { out.continuous.append((m.rightEdgeSlide, rightDelta)); out.spots.append(.rightEdgeSlide) }
+        if leftDelta != 0 && leftSlideOn { out.continuous.append((.leftEdgeSlide, m.leftEdgeSlide, leftDelta)); out.spots.append(.leftEdgeSlide) }
+        if rightDelta != 0 && rightSlideOn { out.continuous.append((.rightEdgeSlide, m.rightEdgeSlide, rightDelta)); out.spots.append(.rightEdgeSlide) }
         return out
     }
 }
