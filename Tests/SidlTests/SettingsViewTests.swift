@@ -69,3 +69,19 @@ final class TouchDotsTests: XCTestCase {
         XCTAssertLessThan(point(0.1, 0.5).x, point(0.9, 0.5).x)
     }
 }
+
+final class GestureActivityTests: XCTestCase {
+    func testSwipeFiresAndSlideStartsAndEnds() {
+        let activity = GestureActivity()
+        activity.record(.topEdgeSwipe, at: CGPoint(x: 0.5, y: 0.9))
+        activity.record(.topEdgeSwipe, at: nil)
+        XCTAssertEqual(activity.lastFire?.spot, .topEdgeSwipe)
+        XCTAssertEqual(activity.lastFire?.id, 2, "the same gesture twice must be two fires")
+
+        activity.record(.rightEdgeSlide, at: nil)
+        XCTAssertEqual(activity.sliding, [.rightEdgeSlide])
+        XCTAssertEqual(activity.lastFire?.id, 2, "a slide is not a fire")
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+        XCTAssertTrue(activity.sliding.isEmpty, "the slide ends when no frame comes")
+    }
+}

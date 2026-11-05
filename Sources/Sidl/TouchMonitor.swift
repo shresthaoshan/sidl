@@ -75,6 +75,13 @@ final class TouchMonitor: ObservableObject {
 
         DispatchQueue.main.async {
             self.touches = frame
+            if !out.spots.isEmpty {
+                let touching = frame.filter { $0.state == 4 }
+                let center = touching.isEmpty ? nil
+                    : CGPoint(x: CGFloat(touching.map(\.x).reduce(0, +)) / CGFloat(touching.count),
+                              y: CGFloat(touching.map(\.y).reduce(0, +)) / CGFloat(touching.count))
+                for spot in out.spots { GestureActivity.shared.record(spot, at: center) }
+            }
             for action in out.discrete { Actions.perform(action) }
             for (action, delta) in out.continuous {
                 switch Actions.adjust(action, by: delta) {
@@ -87,5 +94,37 @@ final class TouchMonitor: ObservableObject {
                 }
             }
         }
+    }
+}
+
+/// The gestures that just ran, so the Settings drawing can animate them. Main thread only.
+final class GestureActivity: ObservableObject {
+    static let shared = GestureActivity()
+
+    struct Fire: Equatable {
+        let spot: GestureSpot
+        let point: CGPoint?  // finger center, 0..1, y from the bottom; nil for corner clicks
+        let id: Int          // a new value for each fire, also for the same gesture twice
+    }
+
+    @Published private(set) var lastFire: Fire?
+    /// Slides that are running now. Changes only when a slide starts or ends, not on every frame.
+    @Published private(set) var sliding: Set<GestureSpot> = []
+
+    private var count = 0
+    private var slideEnds: [GestureSpot: DispatchWorkItem] = [:]
+
+    func record(_ spot: GestureSpot, at point: CGPoint?) {
+        guard spot.continuous != nil else {
+            count += 1
+            lastFire = Fire(spot: spot, point: point, id: count)
+            return
+        }
+        if !sliding.contains(spot) { sliding.insert(spot) }
+        // A slide sends a frame about every 8 ms. It ends when no frame comes for a short time.
+        slideEnds[spot]?.cancel()
+        let end = DispatchWorkItem { [weak self] in self?.sliding.remove(spot) }
+        slideEnds[spot] = end
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: end)
     }
 }

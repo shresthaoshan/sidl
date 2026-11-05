@@ -50,10 +50,13 @@ final class InputFilter: ObservableObject {
             if !momentum { droppedLast = drop }
             return drop ? nil : pass
         case .leftMouseDown:
-            let action = cornerAction()
-            guard clicks.handle(.down, cornerAction: action != nil), let action else { return pass }
+            let corner = cornerAction()
+            guard clicks.handle(.down, cornerAction: corner != nil), let corner else { return pass }
             // Run the action after the tap returns, so the event tap stays fast.
-            DispatchQueue.main.async { Actions.perform(action) }
+            DispatchQueue.main.async {
+                GestureActivity.shared.record(corner.spot, at: nil)
+                Actions.perform(corner.action)
+            }
             return nil
         case .leftMouseDragged:
             return clicks.handle(.dragged, cornerAction: false) ? nil : pass
@@ -64,15 +67,14 @@ final class InputFilter: ObservableObject {
         }
     }
 
-    /// The action for the corner under a single finger, if that corner has one.
-    private func cornerAction() -> DiscreteAction? {
-        let corner = TouchMonitor.shared.corner(at: ProcessInfo.processInfo.systemUptime)
+    /// The corner under a single finger and its action, if that corner has one.
+    private func cornerAction() -> (spot: GestureSpot, action: DiscreteAction)? {
         let m = SettingsStore.shared.mapping
-        let action: DiscreteAction? = switch corner {
-        case .topLeft: m.topLeftCorner
-        case .topRight: m.topRightCorner
+        let corner: (spot: GestureSpot, action: DiscreteAction)? = switch TouchMonitor.shared.corner(at: ProcessInfo.processInfo.systemUptime) {
+        case .topLeft: (.topLeftCorner, m.topLeftCorner)
+        case .topRight: (.topRightCorner, m.topRightCorner)
         case nil: nil
         }
-        return action == .disabled ? nil : action
+        return corner?.action == .disabled ? nil : corner
     }
 }

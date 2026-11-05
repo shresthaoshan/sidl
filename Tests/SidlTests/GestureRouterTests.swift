@@ -23,6 +23,14 @@ final class GestureRouterTests: XCTestCase {
         XCTAssertEqual(run(swipeRight(), m).flatMap(\.discrete), [.openApp(bundleID: "com.apple.Safari")])
     }
 
+    /// The Settings drawing animates the gesture that ran, so the router must name it.
+    func testOutputNamesTheGesture() {
+        XCTAssertEqual(run(swipeRight()).flatMap(\.spots), [.leftEdgeSwipe])
+        XCTAssertEqual(run(swipeDown()).flatMap(\.spots), [.topEdgeSwipe])
+        XCTAssertEqual(Set(run(slideUp(x: 0.03)).flatMap(\.spots)), [.leftEdgeSlide])
+        XCTAssertEqual(Set(run(slideUp(x: 0.93)).flatMap(\.spots)), [.rightEdgeSlide])
+    }
+
     func testTopSwipeRoutesToMappedAction() {
         var m = Mapping()
         m.topEdgeSwipe = .nextTrack

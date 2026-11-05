@@ -222,6 +222,8 @@ enum GestureSpot: CaseIterable, Identifiable {
 private struct GestureMap: View {
     let mapping: Mapping
     @Binding var selected: GestureSpot
+    @ObservedObject var activity = GestureActivity.shared
+    @State private var pulse: GestureSpot?
 
     // The same sizes as GestureRouter and CornerClickDetector use.
     private static let edge: CGFloat = 0.1
@@ -234,13 +236,15 @@ private struct GestureMap: View {
                 RoundedRectangle(cornerRadius: 12).fill(Self.silver)
                 RoundedRectangle(cornerRadius: 12).strokeBorder(Color(red: 0.53, green: 0.56, blue: 0.58))
                 // The selected gesture's trigger zone, at the size the recognizers use.
-                let zone = zone(w: w, h: h)
-                Group {
-                    Color.accentColor.opacity(0.25)
-                    RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: 3)
+                zoneHighlight(selected, w: w, h: h)
+                ForEach(GestureSpot.allCases.filter(activity.sliding.contains)) { zoneHighlight($0, w: w, h: h) }
+                // A new id for each fire, so the flash and the ripple start again.
+                if let fire = activity.lastFire {
+                    zoneHighlight(fire.spot, w: w, h: h).modifier(FadeOut()).id(fire.id)
+                    if let p = fire.point {
+                        Ripple().position(x: p.x * w, y: (1 - p.y) * h).id(fire.id)
+                    }
                 }
-                .mask(Rectangle().frame(width: zone.width, height: zone.height).position(x: zone.midX, y: zone.midY))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
                 VStack(spacing: 4) {
                     Image(systemName: "hand.point.up.left").font(.title3)
                     Text("Click a gesture to change it").font(.caption)
@@ -255,6 +259,14 @@ private struct GestureMap: View {
                 TouchDots()
             }
         }
+        .animation(.easeOut(duration: 0.2), value: activity.sliding)
+        .onChange(of: activity.lastFire) { fire in
+            guard let fire else { return }
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) { pulse = fire.spot }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { if pulse == fire.spot { pulse = nil } }
+            }
+        }
         .environment(\.colorScheme, .light)  // silver in dark mode too, like the real trackpad, so keep dark text
     }
 
@@ -265,9 +277,21 @@ private struct GestureMap: View {
                                                         Color(red: 0.64, green: 0.67, blue: 0.68)],  // #A2AAAD, Apple aluminum
                                                startPoint: .top, endPoint: .bottom)
 
-    /// Where the selected gesture must start, in points.
-    private func zone(w: CGFloat, h: CGFloat) -> CGRect {
-        switch selected {
+    /// A gesture's trigger zone in blue, with the trackpad border along it.
+    private func zoneHighlight(_ spot: GestureSpot, w: CGFloat, h: CGFloat) -> some View {
+        let zone = zone(spot, w: w, h: h)
+        return Group {
+            Color.accentColor.opacity(0.25)
+            RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: 3)
+        }
+        .mask(Rectangle().frame(width: zone.width, height: zone.height).position(x: zone.midX, y: zone.midY))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .allowsHitTesting(false)
+    }
+
+    /// Where a gesture must start, in points.
+    private func zone(_ spot: GestureSpot, w: CGFloat, h: CGFloat) -> CGRect {
+        switch spot {
         case .leftEdgeSwipe, .leftEdgeSlide: CGRect(x: 0, y: 0, width: w * Self.edge, height: h)
         case .rightEdgeSlide: CGRect(x: w * (1 - Self.edge), y: 0, width: w * Self.edge, height: h)
         case .topEdgeSwipe: CGRect(x: 0, y: 0, width: w, height: h * Self.edge)
@@ -278,6 +302,7 @@ private struct GestureMap: View {
 
     private func mark(_ spot: GestureSpot) -> some View {
         let isSelected = spot == selected
+        let isActive = isSelected || activity.sliding.contains(spot)
         let disabled = spot.isDisabled(in: mapping)
         let icon = Image(systemName: spot.symbol)
             .font(.system(size: 12, weight: .semibold))
@@ -300,10 +325,11 @@ private struct GestureMap: View {
                 if trailing { icon }
             }
             .padding(5)
-            .background(RoundedRectangle(cornerRadius: 9).fill(isSelected ? Color.white.opacity(0.35) : Color.clear))
+            .background(RoundedRectangle(cornerRadius: 9).fill(isActive ? Color.white.opacity(0.35) : Color.clear))
             .contentShape(RoundedRectangle(cornerRadius: 9))
         }
         .buttonStyle(.plain)
+        .scaleEffect(pulse == spot ? 1.12 : activity.sliding.contains(spot) ? 1.05 : 1)
         .help(spot.title)
     }
 }
@@ -332,6 +358,32 @@ struct TouchDots: View {
         let inset = dotSize / 2
         return CGPoint(x: inset + CGFloat(min(max(t.x, 0), 1)) * (size.width - 2 * inset),
                        y: inset + CGFloat(1 - min(max(t.y, 0), 1)) * (size.height - 2 * inset))
+    }
+}
+
+/// Fades its content out once, when it appears.
+private struct FadeOut: ViewModifier {
+    @State private var done = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(done ? 0 : 1)
+            .onAppear { withAnimation(.easeOut(duration: 0.6)) { done = true } }
+    }
+}
+
+/// A ring that grows from the fingers and fades, once, when it appears.
+private struct Ripple: View {
+    @State private var done = false
+
+    var body: some View {
+        Circle()
+            .stroke(Color.accentColor, lineWidth: 3)
+            .frame(width: 40, height: 40)
+            .scaleEffect(done ? 4 : 0.3)
+            .opacity(done ? 0 : 0.9)
+            .allowsHitTesting(false)
+            .onAppear { withAnimation(.easeOut(duration: 0.6)) { done = true } }
     }
 }
 
