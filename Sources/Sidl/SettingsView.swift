@@ -278,13 +278,28 @@ private struct GestureMap: View {
                                                startPoint: .top, endPoint: .bottom)
 
     /// A gesture's trigger zone in blue, with the trackpad border along it.
+    /// A swipe fades out in its direction, over the zone and the travel it needs to fire.
     private func zoneHighlight(_ spot: GestureSpot, w: CGFloat, h: CGFloat) -> some View {
         let zone = zone(spot, w: w, h: h)
-        return Group {
-            Color.accentColor.opacity(0.25)
-            RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: 3)
+        let reach = CGFloat(Self.edge) + CGFloat(mapping.swipeTravel)
+        let fill: CGRect, end: UnitPoint
+        switch spot {
+        case .leftEdgeSwipe: fill = CGRect(x: 0, y: 0, width: w * reach, height: h); end = .trailing
+        case .topEdgeSwipe: fill = CGRect(x: 0, y: 0, width: w, height: h * reach); end = .bottom
+        default: fill = zone; end = .center
         }
-        .mask(Rectangle().frame(width: zone.width, height: zone.height).position(x: zone.midX, y: zone.midY))
+        let start: UnitPoint = end == .trailing ? .leading : end == .bottom ? .top : .center
+        return ZStack {
+            if end == .center {
+                Color.accentColor.opacity(0.25).frame(width: fill.width, height: fill.height).position(x: fill.midX, y: fill.midY)
+            } else {
+                LinearGradient(colors: [Color.accentColor.opacity(0.45), Color.accentColor.opacity(0)], startPoint: start, endPoint: end)
+                    .frame(width: fill.width, height: fill.height)
+                    .position(x: fill.midX, y: fill.midY)
+            }
+            RoundedRectangle(cornerRadius: 12).strokeBorder(Color.accentColor, lineWidth: 3)
+                .mask(Rectangle().frame(width: zone.width, height: zone.height).position(x: zone.midX, y: zone.midY))
+        }
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .allowsHitTesting(false)
     }
