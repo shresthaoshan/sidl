@@ -534,11 +534,21 @@ private struct SensitivityRow: View {
     @Binding var level: Int
 
     var body: some View {
-        Picker(title, selection: $level) {
-            ForEach(Mapping.sensitivityLevels, id: \.self) {
-                Text($0 == Mapping.defaultSensitivity ? "\($0) (default)" : "\($0)").tag($0)
+        let range = Mapping.sensitivityLevels
+        LabeledContent(title) {
+            // With a step, the macOS slider shows one tick mark for each level and snaps to it.
+            Slider(value: Binding(get: { Double(level) }, set: { level = Int($0.rounded()) }),
+                   in: Double(range.lowerBound)...Double(range.upperBound), step: 1) {
+                EmptyView()
+            } minimumValueLabel: {
+                Text("Low").font(.caption)
+            } maximumValueLabel: {
+                Text("High").font(.caption)
             }
+            .labelsHidden()
+            .frame(width: 220)
         }
+        .help(level == Mapping.defaultSensitivity ? "Level \(level) (default)" : "Level \(level)")
     }
 }
 
