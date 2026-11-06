@@ -16,13 +16,14 @@ final class HUD: ObservableObject {
     func show(_ action: ContinuousAction, level: Float?) {
         self.action = action
         self.level = level
+        let wasVisible = panel.isVisible
         place()
         // A zero-length animation also stops a fade that is running now.
         NSAnimationContext.runAnimationGroup { $0.duration = 0; panel.animator().alphaValue = 1 }
         panel.orderFrontRegardless()
         // After a long run (sleep, display changes), macOS can stop showing an old panel on
         // full-screen Spaces, even with .canJoinAllSpaces. A new panel joins the active Space.
-        if !panel.isOnActiveSpace {
+        if Self.needsNewPanel(wasVisible: wasVisible, onActiveSpace: panel.isOnActiveSpace) {
             NSLog("Sidl: HUD panel is not on the active Space, making a new one")
             panel.orderOut(nil)
             panel = makePanel()
@@ -39,6 +40,12 @@ final class HUD: ObservableObject {
                 if generation == current { panel.orderOut(nil) }
             })
         }
+    }
+
+    /// Checks only when a slide starts. Just after a panel appears, macOS can report it off the
+    /// active Space for a few milliseconds, and a new panel in the middle of a slide never helps.
+    static func needsNewPanel(wasVisible: Bool, onActiveSpace: Bool) -> Bool {
+        !wasVisible && !onActiveSpace
     }
 
     static func symbol(for action: ContinuousAction, level: Float?) -> String {

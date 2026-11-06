@@ -22,6 +22,12 @@ final class HUDTests: XCTestCase {
         XCTAssertFalse(hud.panel.isVisible)
     }
 
+    func testNewPanelOnlyWhenASlideStartsOffTheActiveSpace() {
+        XCTAssertTrue(HUD.needsNewPanel(wasVisible: false, onActiveSpace: false))
+        XCTAssertFalse(HUD.needsNewPanel(wasVisible: true, onActiveSpace: false), "not in the middle of a slide")
+        XCTAssertFalse(HUD.needsNewPanel(wasVisible: false, onActiveSpace: true))
+    }
+
     func testRepeatedShowRestartsFade() {
         let hud = HUD()
         hud.show(.volume, level: 0.5)
