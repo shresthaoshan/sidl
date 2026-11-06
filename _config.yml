@@ -15,6 +15,7 @@ plugins:
 # because GitHub Pages does not render files with those names without front matter.
 exclude:
   - CONTRIBUTING.md
+  - DESIGN.md
   - LICENSE
   - Package.swift
   - Sources

@@ -135,13 +135,38 @@ Private APIs can change in any macOS update.
 - Sidl supports two trackpads at the same time, and trackpads that connect after it starts. These are not yet tested with a real Magic Trackpad. Please report problems.
 - External monitor brightness (DDC/CI) is not yet tested with a real monitor. It works with one external monitor at a time, only on Apple silicon. Please report problems with your monitor model and how it connects.
 
+## Troubleshooting
+
+- **No gesture works.** Check that the Sidl icon is in the menu bar. If it is, look in the log for an error:
+  `log show --last 10m --predicate 'process == "Sidl"' --style compact`
+  "failed to load MultitouchSupport" means that a macOS update changed the private framework.
+- **Corner clicks, scroll blocking, Screenshot, or Keyboard shortcut do nothing.** These need Accessibility permission. Open Sidl Settings, and look at the **Settings** tab. If Accessibility is not **Granted**, click **Open Settings** and turn on Sidl.
+- **The permission stops working after a rebuild.** With ad-hoc signing, each build is a new app for macOS. In **System Settings → Privacy & Security → Accessibility**, remove Sidl with **−**, then add it again. To stop this, use a signing certificate (see [Signing](#signing)).
+- **A swipe fires too easily, or not at all.** Change **Swipe sensitivity** in the **Settings** tab. The Gestures tab shows where a swipe must start, and how far it must go.
+- **No haptic tick.** Haptics need a Force Touch trackpad, and **Haptic feedback on swipes** must be on. If it still fails, the log shows "haptic failed".
+- **Brightness shows "Not supported on this display".** See the brightness notes in [Requirements](#requirements).
+
+## Uninstall
+
+1. In Sidl Settings, turn off **Launch at login**.
+2. Click the Sidl icon in the menu bar, then click **Quit Sidl**.
+3. Delete `Sidl.app`.
+4. Remove the settings and the Accessibility permission:
+
+   ```bash
+   defaults delete app.sidl.Sidl
+   tccutil reset Accessibility app.sidl.Sidl
+   ```
+
 ## Project layout
 
 ```
-Sources/CMultitouch/   C shim that loads MultitouchSupport
-Sources/Sidl/          The app: recognizers, router, actions, settings, HUD
-Tests/SidlTests/       Unit tests
-scripts/bundle.sh      Builds and signs Sidl.app
+Sources/CMultitouch/       C shim that loads MultitouchSupport
+Sources/Sidl/              The app: recognizers, router, actions, settings, HUD
+Tests/SidlTests/           Unit tests, and Fixtures/ with recorded trackpad frames
+scripts/bundle.sh          Builds and signs Sidl.app
+scripts/record-touches.sh  Records trackpad frames for a test fixture
+DESIGN.md                  Design rules for Settings, the HUD, and haptics
 ```
 
 ## Contributing

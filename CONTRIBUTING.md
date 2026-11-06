@@ -94,8 +94,21 @@ Unit tests cannot check how a gesture feels. Before you send a gesture change:
 
 In the pull request, write which Mac, which trackpad, and which macOS version you used.
 
+### Record a test fixture
+
+`Tests/SidlTests/Fixtures/` has real trackpad frames, recorded on a real trackpad. `FixtureTests` replays each file through the recognizers and checks which gestures fire. Synthetic frames in the other tests cannot show how real fingers move, so these files catch false triggers.
+
+To record a new file:
+
+1. Run `scripts/bundle.sh`.
+2. Run `scripts/record-touches.sh <name>`, for example `scripts/record-touches.sh right-edge-swipe-left`. The script quits Sidl and starts it again with recording on.
+3. Do only the gesture that the file is for. Sidl still runs the actions while it records.
+4. Press Control-C, then run `open Sidl.app`.
+5. Add the file and what it must fire to the table in `FixtureTests.swift`.
+
 ## Code style
 
+- For the Settings window, the HUD, and the haptics, follow [DESIGN.md](DESIGN.md).
 - Match the code around your change: names, comment density, and idioms.
 - Keep changes small. Prefer the standard library and system frameworks to new code.
 - Write comments that explain **why**, not what.
