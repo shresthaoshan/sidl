@@ -20,6 +20,8 @@ final class TouchMonitor: ObservableObject {
     /// Read by the touch threads and the event tap. The lock also serializes frames from different trackpads.
     private let hub = OSAllocatedUnfairLock(initialState: TouchHub())
     private var restartWork: DispatchWorkItem?
+    /// Writes every frame to a file when SIDL_RECORD is set, for test fixtures (see scripts/record-touches.sh).
+    private let recorder = ProcessInfo.processInfo.environment["SIDL_RECORD"].flatMap { TouchRecorder(path: $0) }
 
     private init() {}
 
@@ -36,8 +38,6 @@ final class TouchMonitor: ObservableObject {
 
     /// The corner that a click at `time` belongs to, on any trackpad.
     func corner(at time: Double) -> Corner? { hub.withLock { $0.corner(at: time) } }
-
-    /// Shows an action in the panel's "Last gesture" line. Main thread only.
 
     /// One device change often sends several notifications, so wait until they stop.
     private func scheduleRestart() {
@@ -64,7 +64,10 @@ final class TouchMonitor: ObservableObject {
     private func handle(_ frame: [Touch], device: UInt) {
         let mapping = SettingsStore.shared.snapshot.withLock { $0 }
         let time = ProcessInfo.processInfo.systemUptime
-        let out = hub.withLock { $0.process(frame, device: device, mapping: mapping, time: time) }
+        let out = hub.withLock { hub in
+            recorder?.write(frame, device: device, time: time)  // in the lock, so two trackpads never mix lines
+            return hub.process(frame, device: device, mapping: mapping, time: time)
+        }
 
         // Here, not on the main thread: `device` is valid only during the frame callback.
         // Waveform 6 is a strong short tick. NSHapticFeedbackManager has one strength, and it is too weak.
@@ -135,5 +138,26 @@ final class GestureActivity: ObservableObject {
         let percent = (level * 100).rounded()
         guard levels[spot].map({ ($0 * 100).rounded() }) != percent else { return }
         levels[spot] = percent / 100
+    }
+}
+
+/// Writes trackpad frames as CSV: one line for each finger, or one line with only the time for a frame with no fingers.
+final class TouchRecorder {
+    static let header = "time,device,id,x,y,state,size"
+    private let file: FileHandle
+
+    init?(path: String) {
+        guard FileManager.default.createFile(atPath: path, contents: Data((Self.header + "\n").utf8)),
+              let file = FileHandle(forWritingAtPath: path) else { return nil }
+        file.seekToEndOfFile()
+        self.file = file
+    }
+
+    /// Writes at once, with no buffer, so stopping Sidl with Control-C loses nothing.
+    func write(_ frame: [Touch], device: UInt, time: Double) {
+        let t = String(format: "%.4f", time)
+        let lines = frame.isEmpty ? ["\(t),\(device),,,,,"]
+            : frame.map { "\(t),\(device),\($0.id),\($0.x),\($0.y),\($0.state),\($0.size)" }
+        file.write(Data((lines.joined(separator: "\n") + "\n").utf8))
     }
 }
